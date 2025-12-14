@@ -1,0 +1,25 @@
+# Ambientes Virtuais
+venv/
+.venv/
+
+# Python Cache e Bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Arquivos de Configuração/Secrets (NÃO SUBIR!)
+.env
+*.sqlite
+instance/
+config.py
+
+# Logs e Temporários
+*.log
+tmp/
+build/
+
+# Editor e Sistema
+.vscode/
+.idea/
+*.swp
