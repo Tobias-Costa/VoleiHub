@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ================= KPIs ================= -->
+<div class="row g-3 mb-4">
+
+    <div class="col-12 col-md-4">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Projetos Ativos</h6>
+                <h2 class="fw-bold">{{ n_projetos_ativos }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Equipes Ativas</h6>
+                <h2 class="fw-bold">{{ n_equipes_ativas }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+        <div class="card shadow-sm text-center">
+            <div class="card-body">
+                <h6 class="text-muted">Total de Atletas</h6>
+                <h2 class="fw-bold">{{ n_atletas }}</h2>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ================= STATUS ATLETAS ================= -->
+<div class="row g-3 mb-4">
+
+    <div class="col-12 col-md-4">
+        <div class="card shadow-sm text-center border-success">
+            <div class="card-body">
+                <h6 class="text-muted">Atletas Ativos</h6>
+                <h2 class="fw-bold text-success">{{ atletas_ativos }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+        <div class="card shadow-sm text-center border-warning">
+            <div class="card-body">
+                <h6 class="text-muted">Lesionados</h6>
+                <h2 class="fw-bold text-warning">{{ atletas_lesionados }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+        <div class="card shadow-sm text-center border-danger">
+            <div class="card-body">
+                <h6 class="text-muted">Suspensos</h6>
+                <h2 class="fw-bold text-danger">{{ atletas_suspensos }}</h2>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ================= NAVEGAÇÃO RÁPIDA ================= -->
+<div class="row g-3 mb-4">
+
+    <div class="col-12 col-md-4">
+        <a href="{{ url_for('criar_projeto') }}" class="card shadow-sm text-center text-decoration-none">
+            <div class="card-body">
+                <h5>➕ Novo Projeto</h5>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-12 col-md-4">
+        <a href="{{ url_for('criar_equipe') }}" class="card shadow-sm text-center text-decoration-none">
+            <div class="card-body">
+                <h5>➕ Nova Equipe</h5>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-12 col-md-4">
+        <a href="{{ url_for('criar_atleta') }}" class="card shadow-sm text-center text-decoration-none">
+            <div class="card-body">
+                <h5>➕ Novo Atleta</h5>
+            </div>
+        </a>
+    </div>
+
+</div>
+
+<!-- ================= TRANSFERÊNCIAS RECENTES ================= -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-bold">
+        Transferências recentes
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Proj.Origem</th>
+                    <th>Eq.Origem</th>
+                    <th><i class="bi bi-arrow-right"></i></th>
+                    <th>Proj.Destino</th>
+                    <th>Eq.Destino</th>
+                    <th>Atleta</th>
+                    <th>Responsável</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for transferencia in transferencias %}
+                <tr>
+                    <td>{{ transferencia.proj_origem }}</td>
+                    <td>{{ transferencia.eq_origem  }}</td>
+                    <td></td>
+                    <td>{{ transferencia.proj_destino }}</td>
+                    <td>{{ transferencia.eq_destino }}</td>
+                    <td>{{ transferencia.nome_atleta }}</td>
+                    <td>{{ transferencia.responsavel }}</td>
+                    <!-- <td class="text-end">
+                        Detalhar transferencia
+                        <a 
+                            href="url_for('home', transferencia_id=atividade.id) " 
+                            class="btn btn-sm btn-outline-primary">
+                            Ver
+                        </a>
+                    </td> -->
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">
+                        Nenhuma atividade encontrada
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ================= LISTA DE PROJETOS ================= -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-bold">
+        Projetos
+    </div>
+
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end mb-4">
+
+            <div class="col-12 col-md-4">
+                <label class="form-label mb-1">Pesquisar projeto</label>
+                <input 
+                    type="text" 
+                    name="q"
+                    value="{{ request.args.get('q', '') }}"
+                    class="form-control"
+                    placeholder="Nome do projeto">
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label class="form-label mb-1">Cidade</label>
+                <select name="status" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="ativo" {{ 'selected' if request.args.get('status') == 'ativo' }}>
+                        Ativo
+                    </option>
+                    <option value="inativo" {{ 'selected' if request.args.get('status') == 'inativo' }}>
+                        Inativo
+                    </option>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label class="form-label mb-1">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">Todos</option>
+                    <option value="ativo" {{ 'selected' if request.args.get('status') == 'ativo' }}>
+                        Ativo
+                    </option>
+                    <option value="inativo" {{ 'selected' if request.args.get('status') == 'inativo' }}>
+                        Inativo
+                    </option>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-2">
+                <button class="btn btn-primary w-100">
+                    Filtrar
+                </button>
+            </div>
+
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nome</th>
+                        <th>Cidade</th>
+                        <th>Equipes</th>
+                        <th>Atletas</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for projeto in projetos %}
+                    <tr>
+                        <td>{{ projeto.nome }}</td>
+                        <td>{{ projeto.cidade }}</td>
+                        <td>{{ projeto.n_equipes }}</td>
+                        <td>{{ projeto.n_atletas }}</td>
+                        <td>
+                            {% if projeto.is_active %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inativo</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a 
+                                href="{{ url_for('home', projeto_id=projeto.id) }}" 
+                                class="btn btn-sm btn-outline-primary">
+                                Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">
+                            Nenhum projeto encontrado
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
