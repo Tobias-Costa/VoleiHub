@@ -1,13 +1,30 @@
 from datetime import datetime
+from sqlalchemy import MetaData
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
-db = SQLAlchemy()
+# 1. Defina a convenção de nomes
+convention = {
+    "ix": 'ix_%(column_0_label)s',
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s"
+}
+
+# 2. Passe a convenção para o MetaData
+metadata = MetaData(naming_convention=convention)
+
+# 3. Inicialize o DB com esse metadata
+db = SQLAlchemy(metadata=metadata)
 
 class Usuario(db.Model):
     __tablename__ = 'usuarios' 
 
     id = db.Column(db.Integer, primary_key=True)
-    nome_usuario = db.Column(db.String(80), nullable=False)
+    # profile_picture_url = Column(String(255), nullable=True) 
+    firstname_usuario = db.Column(db.String(80), nullable=False)
+    lastname_usuario = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     telefone1 = db.Column(db.String(20), nullable=False)
@@ -115,18 +132,30 @@ class Status(db.Model):
     def __repr__(self):
         return f'<Nivel {self.nome_status}>'
 
+class Sexo(db.Model):
+    __tablename__ = 'sexos' 
+
+    id = db.Column(db.Integer, primary_key=True)
+    sexo = db.Column(db.String(40), unique=True, nullable=False)
+
+    def __repr__(self):
+        return f'<Sexo {self.sexo} ID:{self.id}>'
+
 class Atleta(db.Model):
     __tablename__ = 'atletas' 
 
     id = db.Column(db.Integer, primary_key=True)
     # profile_picture_url = Column(String(255), nullable=True) 
     equipe_id = db.Column(db.Integer, db.ForeignKey('equipes.id'), nullable=False)
-    nome_atleta = db.Column(db.String(80), nullable=False)
+    firstname_atleta = db.Column(db.String(80), nullable=False)
+    lastname_atleta = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
+    rg = db.Column(db.String(20), unique=True, nullable=False)
     cpf = db.Column(db.String(11), unique=True, nullable=False)
     data_nascimento =  db.Column(db.Date, nullable=False)
     telefone1 = db.Column(db.String(20), nullable=False)
     telefone2 = db.Column(db.String(20), nullable=True)
+    sexo_id = db.Column(db.Integer, db.ForeignKey('sexos.id'), nullable=False)
     modalidade_id = db.Column(db.Integer, db.ForeignKey('modalidades.id'), nullable=False)
     posicao_id = db.Column(db.Integer, db.ForeignKey('posicoes.id'), nullable=False)
     categorias_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=False)
