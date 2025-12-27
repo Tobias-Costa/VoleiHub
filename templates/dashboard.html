@@ -168,14 +168,13 @@
 
             <div class="col-12 col-md-3">
                 <label class="form-label mb-1">Cidade</label>
-                <select name="status" class="form-select">
+                <select name="cidade" class="form-select">
                     <option value="">Todos</option>
-                    <option value="ativo" {{ 'selected' if request.args.get('status') == 'ativo' }}>
-                        Ativo
-                    </option>
-                    <option value="inativo" {{ 'selected' if request.args.get('status') == 'inativo' }}>
-                        Inativo
-                    </option>
+                    {% for cidade in cidades %}
+                        <option value="{{cidade.id}}" {{ 'selected' if request.args.get('cidade') == cidade.nome_cidade }}>
+                            {{ cidade.nome_cidade.title() }}
+                        </option>
+                    {% endfor %}
                 </select>
             </div>
 
@@ -217,7 +216,7 @@
                     {% for projeto in projetos %}
                     <tr>
                         <td>{{ projeto.nome }}</td>
-                        <td>{{ projeto.cidade }}</td>
+                        <td>{{ projeto.cidade.title() }}</td>
                         <td>{{ projeto.n_equipes }}</td>
                         <td>{{ projeto.n_atletas }}</td>
                         <td>

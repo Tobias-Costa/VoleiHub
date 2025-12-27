@@ -19,19 +19,26 @@ def index():
 
 @app.route('/home')
 def home():
+    # Coloque aqui querys gerais para otimizar o app reduzindo queries
+    projetos_query = db.session.query(Projeto)
+    equipes_query = db.session.query(Equipe)
+    atletas_query = db.session.query(Atleta)
+    cidades_query = db.session.query(Cidade)
+    id_status_query = db.session.query(Status.id)
 
-    total_projetos_ativos = db.session.query(Projeto).filter_by(is_active=True).count()
-    total_equipes_ativas = db.session.query(Equipe).filter_by(is_active=True).count()
-    total_atletas = db.session.query(Atleta).count()
+    # Painel dashboard
+    total_projetos_ativos = projetos_query.filter_by(is_active=True).count()
+    total_equipes_ativas = equipes_query.filter_by(is_active=True).count()
+    total_atletas = atletas_query.count()
 
     # Status Atletas
-    id_status_ativo = db.session.query(Status.id).filter_by(nome_status="ativo").scalar()
-    id_status_lesionado = db.session.query(Status.id).filter_by(nome_status="lesionado").scalar()
-    id_status_suspenso = db.session.query(Status.id).filter_by(nome_status="suspenso").scalar()
+    id_status_ativo = id_status_query.filter_by(nome_status="ativo").scalar()
+    id_status_lesionado = id_status_query.filter_by(nome_status="lesionado").scalar()
+    id_status_suspenso = id_status_query.filter_by(nome_status="suspenso").scalar()
 
-    atletas_ativos = db.session.query(Atleta).filter_by(status_id=id_status_ativo).count()
-    atletas_lesionados = db.session.query(Atleta).filter_by(status_id=id_status_lesionado).count()
-    atletas_suspensos = db.session.query(Atleta).filter_by(status_id=id_status_suspenso).count()
+    atletas_ativos = atletas_query.filter_by(status_id=id_status_ativo).count()
+    atletas_lesionados = atletas_query.filter_by(status_id=id_status_lesionado).count()
+    atletas_suspensos = atletas_query.filter_by(status_id=id_status_suspenso).count()
 
     # Atividades recentes(transferências)
     transferencias = []
@@ -52,19 +59,40 @@ def home():
         transferencias.append({"id":transferencia.id, "proj_origem":proj_origem, "eq_origem":eq_origem, "proj_destino":proj_destino, "eq_destino":eq_destino, "nome_atleta":atleta, "responsavel":responsavel})
 
     # Tabela projetos
-    lista_projetos = db.session.query(Projeto).all()
+
+    ## Lógica para o funcionamento do filtro de projetos
+    q = request.args.get("q", "").strip()
+    status = request.args.get("status")
+    cidade_id = request.args.get("cidade")
+
+    ### Cria cópia de projetos_query
+    filtro_query = projetos_query
+
+    if q:
+        filtro_query = filtro_query.filter(Projeto.nome_projeto.ilike(f"%{q}%"))
+
+    if status == "ativo":
+        filtro_query = filtro_query.filter(Projeto.is_active == True)
+    elif status == "inativo":
+        filtro_query = filtro_query.filter(Projeto.is_active == False)
+
+    if cidade_id:
+        filtro_query = filtro_query.filter(Projeto.cidade_id == cidade_id)
+
+    lista_projetos = filtro_query.all()
+
     projetos = []
     for projeto in lista_projetos:
-        projeto_cidade = db.session.query(Cidade.nome_cidade).filter_by(id=projeto.cidade_id).scalar()
+        projeto_cidade = cidades_query.filter_by(id=projeto.cidade_id).scalar().nome_cidade
+        
+        projeto_equipes = equipes_query.filter_by(projeto_id=projeto.id).count()
 
-        projeto_equipes = db.session.query(Equipe).filter_by(projeto_id=projeto.id).count()
-
-        projeto_atletas = db.session.query(Atleta).join(Equipe, Equipe.id == Atleta.equipe_id).filter(Equipe.projeto_id == projeto.id).count()
+        projeto_atletas = atletas_query.join(Equipe, Equipe.id == Atleta.equipe_id).filter(Equipe.projeto_id == projeto.id).count()
 
         projetos.append({"id":projeto.id, "nome":projeto.nome_projeto, "cidade":projeto_cidade, "n_equipes":projeto_equipes, "n_atletas":projeto_atletas, "is_active":bool(projeto.is_active)})
-        
 
-    return render_template('dashboard.html', n_projetos_ativos=total_projetos_ativos, n_equipes_ativas=total_equipes_ativas, n_atletas=total_atletas, atletas_ativos=atletas_ativos, atletas_lesionados=atletas_lesionados, atletas_suspensos=atletas_suspensos, transferencias=transferencias, projetos=projetos )
+
+    return render_template('dashboard.html', n_projetos_ativos=total_projetos_ativos, n_equipes_ativas=total_equipes_ativas, n_atletas=total_atletas, atletas_ativos=atletas_ativos, atletas_lesionados=atletas_lesionados, atletas_suspensos=atletas_suspensos, transferencias=transferencias, projetos=projetos, cidades=cidades_query.all())
 
 @app.route('/criar/projeto', methods=["GET","POST"])
 def criar_projeto():
