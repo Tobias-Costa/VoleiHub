@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Atleta {{ atleta.nome_atleta }}{% endblock %}
+
+{% block content %}
+
+<!-- ================= DADOS GERAIS ================= -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+
+        <div class="d-flex justify-content-between flex-wrap">
+            <div>
+                <h3 class="fw-bold mb-1">{{ atleta.nome_atleta }}</h3>
+                <p class="mb-1"><strong>Projeto:</strong> {{ atleta.projeto }}</p>
+                <p class="mb-1"><strong>Equipe:</strong> {{ atleta.equipe }}</p>
+
+                <span class="badge bg-info">
+                    {{ atleta.status }}
+                </span>
+            </div>
+
+            <div>
+                <p class="mb-1"><strong>Modalidade:</strong> {{ atleta.modalidade }}</p>
+                <p class="mb-1"><strong>Posição:</strong> {{ atleta.posicao }}</p>
+                <p class="mb-1"><strong>Categoria:</strong> {{ atleta.categoria }}</p>
+                <p class="mb-1"><strong>Nível:</strong> {{ atleta.nivel }}</p>
+                <p class="mb-1"><strong>Sexo:</strong> {{ atleta.sexo }}</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ================= DADOS PESSOAIS (RESTRITO) ================= -->
+ <!-- if usuario_logado.is_admin or usuario_logado.is_coord or usuario_logado.is_tecnico  -->
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-bold">
+        Dados Pessoais
+    </div>
+
+    <div class="card-body">
+        <div class="row g-3">
+
+            <div class="col-12 col-md-6">
+                <strong>Email:</strong> {{ atleta.email }}
+            </div>
+
+            <div class="col-12 col-md-6">
+                <strong>Data de nascimento:</strong> {{ atleta.data_nascimento }}
+            </div>
+
+            <div class="col-12 col-md-6">
+                <strong>Telefone 1:</strong> {{ atleta.telefone1 }}
+            </div>
+
+            <div class="col-12 col-md-6">
+                <strong>Telefone 2:</strong> {{ atleta.telefone2 or '---'}}
+            </div>
+
+            <div class="col-12 col-md-6">
+                <strong>RG:</strong> {{ atleta.rg }}
+            </div>
+
+
+            <div class="col-12 col-md-6">
+                <strong>CPF:</strong> {{ atleta.cpf }}
+            </div>
+
+
+
+        </div>
+
+        <!-- ===== ENDEREÇO ===== -->
+        <hr class="my-3">
+        
+        <h6 class="fw-bold mb-3">Endereço</h6>
+
+        {% if endereco %}
+        <div class="row g-3">
+
+            <div class="col-12 col-md-4">
+                <strong>Logradouro:</strong>
+                {{ endereco.logradouro }}, {{ endereco.numero }}
+            </div>
+
+            
+            <div class="col-12 col-md-8">
+                <strong>Complemento:</strong>
+                {{ endereco.complemento or '---' }}
+            </div>
+
+            <div class="col-12 col-md-4">
+                <strong>Bairro:</strong> {{ endereco.bairro }}
+            </div>
+
+            <div class="col-12 col-md-4">
+                <strong>Cidade:</strong> {{ endereco.cidade }} - {{ endereco.estado_abreviacao }}
+            </div>
+
+            <div class="col-12 col-md-4">
+                <strong>CEP:</strong> {{ endereco.cep }}
+            </div>
+
+
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">
+            Endereço não cadastrado.
+        </p>
+        {% endif %}
+
+    </div>
+
+</div>
+
+<!-- endif  -->
+
+<!-- ================= HISTÓRICO ================= -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-bold">
+        Histórico do Atleta
+    </div>
+
+    <ul class="list-group list-group-flush">
+        {% for h in historico %}
+        <li class="list-group-item">
+            <div>
+                <span class="badge bg-info">{{ h.status }}</span>
+                <!-- CONTEXTO -->
+                 <!-- Somente alguém com role pode ver o motivo -->
+                {% if h.motivo %}
+                    <span>Motivo: {{ h.motivo }}</span>
+                {% endif %}
+                <div class="small text-muted mt-1">
+                    Projeto: {{ h.projeto }} |
+                    Equipe: {{ h.equipe }} |
+                    Responsável: {{ h.responsavel }}
+                </div>
+            </div>
+
+            <!-- DATA -->
+            <small class="text-muted">
+                {{ h.created_at }}
+            </small>
+        </li>
+        {% else %}
+        <li class="list-group-item text-muted">
+            Nenhum histórico registrado
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Equipe {{ equipe.nome_equipe }}{% endblock %}
+
+{% block content %}
+
+<!-- ================= DADOS DA EQUIPE ================= -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+
+        <div class="d-flex justify-content-between flex-wrap">
+            <div>
+                <h3 class="fw-bold mb-1">{{ equipe.nome_equipe }}</h3>
+                <p class="mb-1"><strong>Projeto:</strong> {{ equipe.projeto }}</p>
+                <p class="mb-1"><strong>Técnico:</strong> {{ equipe.tecnico }}</p>
+
+                <span class="badge {% if equipe.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                    {% if equipe.is_active %}
+                        Ativa
+                    {% else %}
+                        Inativa
+                    {% endif %}
+                </span>
+            </div>
+
+            <div class="text-end">
+                <p class="mb-1"><strong>Criada em:</strong> {{ equipe.created_at }}</p>
+                <p class="mb-1"><strong>Total de atletas:</strong> {{ equipe.total_atletas }}</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ================= ATLETAS DA EQUIPE ================= -->
+<div class="card shadow-sm">
+    <div class="card-header fw-bold">
+        Atletas da Equipe
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Nome</th>
+                    <th>Modalidade</th>
+                    <th>Posição</th>
+                    <th>Categoria</th>
+                    <th>Nível</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for atleta in atletas %}
+                <tr>
+                    <td>{{ atleta.nome_atleta }}</td>
+                    <td>{{ atleta.modalidade}}</td>
+                    <td>{{ atleta.posicao }}</td>
+                    <td>{{ atleta.categoria }}</td>
+                    <td>{{ atleta.nivel }}</td>
+                    <td>
+                        <span class="badge bg-info">
+                            {{ atleta.status }}
+                        </span>
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('visualizar_atleta', atleta_id=atleta.id) }}"
+                           class="btn btn-sm btn-outline-primary">
+                            Ver
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">
+                        Nenhum atleta cadastrado
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

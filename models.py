@@ -158,6 +158,7 @@ class Atleta(db.Model):
     sexo_id = db.Column(db.Integer, db.ForeignKey('sexos.id'), nullable=False)
     modalidade_id = db.Column(db.Integer, db.ForeignKey('modalidades.id'), nullable=False)
     posicao_id = db.Column(db.Integer, db.ForeignKey('posicoes.id'), nullable=False)
+    # Se atente que categorias_id está no plural(possível modificacao refactor)
     categorias_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=False)
     nivel_id = db.Column(db.Integer, db.ForeignKey('niveis.id'), nullable=False)
     status_id = db.Column(db.Integer, db.ForeignKey('status.id'), nullable=False)

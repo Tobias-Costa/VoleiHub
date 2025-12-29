@@ -119,13 +119,13 @@
             <tbody>
                 {% for transferencia in transferencias %}
                 <tr>
-                    <td>{{ transferencia.proj_origem }}</td>
-                    <td>{{ transferencia.eq_origem  }}</td>
+                    <td>{{ transferencia.proj_origem.title() }}</td>
+                    <td>{{ transferencia.eq_origem.title()  }}</td>
                     <td></td>
-                    <td>{{ transferencia.proj_destino }}</td>
-                    <td>{{ transferencia.eq_destino }}</td>
-                    <td>{{ transferencia.nome_atleta }}</td>
-                    <td>{{ transferencia.responsavel }}</td>
+                    <td>{{ transferencia.proj_destino.title() }}</td>
+                    <td>{{ transferencia.eq_destino.title() }}</td>
+                    <td>{{ transferencia.nome_atleta.title() }}</td>
+                    <td>{{ transferencia.responsavel.title() }}</td>
                     <!-- <td class="text-end">
                         Detalhar transferencia
                         <a 
@@ -171,7 +171,7 @@
                 <select name="cidade" class="form-select">
                     <option value="">Todos</option>
                     {% for cidade in cidades %}
-                        <option value="{{cidade.id}}" {{ 'selected' if request.args.get('cidade') == cidade.nome_cidade }}>
+                        <option value="{{cidade.id}}" {{ 'selected' if request.args.get('cidade') == cidade.id|string }}>
                             {{ cidade.nome_cidade.title() }}
                         </option>
                     {% endfor %}
@@ -215,7 +215,7 @@
                 <tbody>
                     {% for projeto in projetos %}
                     <tr>
-                        <td>{{ projeto.nome }}</td>
+                        <td>{{ projeto.nome.title() }}</td>
                         <td>{{ projeto.cidade.title() }}</td>
                         <td>{{ projeto.n_equipes }}</td>
                         <td>{{ projeto.n_atletas }}</td>
@@ -228,7 +228,7 @@
                         </td>
                         <td class="text-end">
                             <a 
-                                href="{{ url_for('home', projeto_id=projeto.id) }}" 
+                                href="{{ url_for('visualizar_projeto', projeto_id=projeto.id) }}" 
                                 class="btn btn-sm btn-outline-primary">
                                 Ver
                             </a>
