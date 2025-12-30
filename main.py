@@ -1,8 +1,12 @@
-import os
-from flask import Flask, request, redirect, url_for, render_template
+from flask_wtf import FlaskForm
+from wtforms import StringField, TextAreaField, SelectField, BooleanField
+from wtforms.validators import DataRequired, Length
+from flask import Flask, request, redirect, url_for, render_template, flash
 from flask_migrate import Migrate
 from datetime import datetime
 from models import *
+from dotenv import load_dotenv
+import os
 
 def format_cpf(cpf):
     """Formata um CPF (espera string de 11 dígitos)."""
@@ -27,15 +31,47 @@ def format_rg(rg):
             return f"{rg[:10]}-{rg[10:]}"
     return rg
 
+# Carrega as variáveis do arquivo .env para o sistema
+load_dotenv()
+
 app = Flask(__name__)
 # Configuração do banco de dados SQLite
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///voleihub.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
+app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", "chave-padrao-de-desenvolvimento")
 # Inicializa o 'db' e as migrações com o aplicativo 'app'
 db.init_app(app)
 migrate = Migrate(app, db, render_as_batch=True) 
 
-# --- Rotas da Aplicação ---
+# --- Classes de formulários ---
+class ProjetoForm(FlaskForm):
+    nome_projeto = StringField(
+        'Nome do Projeto',
+        validators=[
+            DataRequired(message="O nome do projeto é obrigatório."),
+            Length(min=5, max=80)
+        ]
+    )
+    descricao = TextAreaField(
+        'Descrição',
+        validators=[Length(max=500)]
+    )
+    is_active = BooleanField(
+        'Projeto ativo',
+        default=True
+    )
+    cidade_id = SelectField(
+        'Cidade',
+        coerce=int,
+        validators=[DataRequired(message="Selecione uma cidade.")]
+    )
+    responsavel_id = SelectField(
+        'Responsável',
+        coerce=int,
+        validators=[DataRequired(message="Selecione um responsável.")]
+    )
 
+
+# --- Rotas da Aplicação ---
 @app.route('/')
 def index():
     return redirect(url_for("home"))
@@ -119,10 +155,95 @@ def home():
 
 @app.route('/criar/projeto/', methods=["GET","POST"])
 def criar_projeto():
-    return render_template('criar_projeto.html')
+    form = ProjetoForm()
+
+    # Popula cidades
+    form.cidade_id.choices = [
+        (cidade_id, f"{nome_cidade.title()} - {abreviacao}")
+        for cidade_id, nome_cidade, abreviacao in (
+            db.session.query(
+                Cidade.id,
+                Cidade.nome_cidade,
+                Estado.abreviacao
+            )
+            .join(Estado, Estado.id == Cidade.estado_id)
+            .order_by(Cidade.nome_cidade)
+            .all()
+        )
+    ]
+
+    # Popula responsáveis
+    form.responsavel_id.choices = [
+        (usuario.id, f"{usuario.firstname_usuario.title()} {usuario.lastname_usuario.title()}")
+        for usuario in db.session.query(Usuario).all()
+    ]
+
+    # Opção inicial
+    form.cidade_id.choices.insert(0, (0, "Selecione uma cidade"))
+    form.responsavel_id.choices.insert(0, (0, "Selecione um responsável"))
+
+    if form.validate_on_submit():
+        novo_projeto = Projeto(nome_projeto=form.nome_projeto.data, descricao=form.descricao.data, cidade_id=form.cidade_id.data, responsavel_id=form.responsavel_id.data)
+        try:
+            db.session.add(novo_projeto)
+            db.session.commit()
+            flash("Projeto salvo com sucesso!", "success")
+            return redirect(url_for('criar_projeto'))
+        except Exception:
+            db.session.rollback()
+            flash("Erro ao salvar no banco de dados.", "danger")
+
+    return render_template('criar_projeto.html', form=form)
+
+@app.route('/editar/projeto/', methods=["GET","POST"])
+def editar_projeto():
+    projeto_id = request.args.get("projeto_id")
+    projeto = db.session.query(Projeto).get_or_404(projeto_id)
+    form = ProjetoForm(obj=projeto)
+
+    form.cidade_id.choices = [
+        (cidade_id, f"{nome_cidade.title()} - {abreviacao}")
+        for cidade_id, nome_cidade, abreviacao in (
+            db.session.query(
+                Cidade.id,
+                Cidade.nome_cidade,
+                Estado.abreviacao
+            )
+            .join(Estado, Estado.id == Cidade.estado_id)
+            .order_by(Cidade.nome_cidade)
+            .all()
+        )
+    ]
+
+    # Popula responsáveis
+    form.responsavel_id.choices = [
+        (usuario.id, f"{usuario.firstname_usuario.title()} {usuario.lastname_usuario.title()}")
+        for usuario in db.session.query(Usuario).all()
+    ]
+
+    # Opção inicial
+    form.cidade_id.choices.insert(0, (0, "Selecione uma cidade"))
+    form.responsavel_id.choices.insert(0, (0, "Selecione um responsável"))
+
+    if form.validate_on_submit():
+        try:
+            projeto.nome_projeto = form.nome_projeto.data
+            projeto.descricao = form.descricao.data
+            projeto.is_active = form.is_active.data
+            projeto.cidade_id = form.cidade_id.data
+            projeto.responsavel_id = form.responsavel_id.data
+            db.session.commit()
+            flash("Projeto atualizado com sucesso!", "success")
+            return redirect(url_for('editar_projeto', projeto_id=projeto.id))
+        except Exception:
+            db.session.rollback()
+            flash("Erro ao atualizar o projeto.", "danger")
+    
+    return render_template("editar_projeto.html", form=form, projeto=projeto)
 
 @app.route('/criar/equipe/', methods=["GET","POST"])
 def criar_equipe():
+
     return render_template('criar_equipe.html')
 
 @app.route('/criar/atleta/', methods=["GET","POST"])

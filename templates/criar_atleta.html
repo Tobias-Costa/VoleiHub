@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}Criar Atleta{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <h3 class="fw-bold mb-4">Cadastrar Novo Atleta</h3>
+
+    <form method="POST">
+
+        <!-- DADOS BÁSICOS -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header fw-bold">Dados Básicos</div>
+            <div class="card-body">
+
+                <div class="mb-3">
+                    <label class="form-label">Nome do Atleta</label>
+                    <input type="text" name="nome_atleta"
+                           class="form-control" required>
+                </div>
+
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email"
+                               class="form-control" required>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Telefone 1</label>
+                        <input type="text" name="telefone1"
+                               class="form-control" required>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Telefone 2</label>
+                        <input type="text" name="telefone2"
+                               class="form-control">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Data de Nascimento</label>
+                    <input type="date" name="data_nascimento"
+                           class="form-control" required>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- DADOS ESPORTIVOS -->
+        <div class="card shadow-sm">
+            <div class="card-header fw-bold">Dados Esportivos</div>
+            <div class="card-body">
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Equipe</label>
+                        <select name="equipe_id" class="form-select" required>
+                            <option value="">Selecione</option>
+                            {% for equipe in equipes %}
+                            <option value="{{ equipe.id }}">
+                                {{ equipe.nome_equipe }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Modalidade</label>
+                        <select name="modalidade_id" class="form-select" required>
+                            {% for m in modalidades %}
+                            <option value="{{ m.id }}">{{ m.nome_modalidade }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Posição</label>
+                        <select name="posicao_id" class="form-select" required>
+                            {% for p in posicoes %}
+                            <option value="{{ p.id }}">{{ p.nome_posicao }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Categoria</label>
+                        <select name="categoria_id" class="form-select" required>
+                            {% for c in categorias %}
+                            <option value="{{ c.id }}">{{ c.nome_categoria }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Nível</label>
+                        <select name="nivel_id" class="form-select" required>
+                            {% for n in niveis %}
+                            <option value="{{ n.id }}">{{ n.nome_nivel }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- STATUS INICIAL -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Status Inicial</label>
+                        <select name="status_id" class="form-select">
+                            {% for s in status %}
+                            <option value="{{ s.id }}">{{ s.nome_status }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button class="btn btn-success">
+                        Cadastrar Atleta
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </form>
+
+</div>
+{% endblock %}
