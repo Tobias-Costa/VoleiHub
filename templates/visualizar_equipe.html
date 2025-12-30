@@ -9,10 +9,14 @@
 
         <div class="d-flex justify-content-between flex-wrap">
             <div>
-                <h3 class="fw-bold mb-1">{{ equipe.nome_equipe }}</h3>
-                <p class="mb-1"><strong>Projeto:</strong> {{ equipe.projeto }}</p>
-                <p class="mb-1"><strong>Técnico:</strong> {{ equipe.tecnico }}</p>
-
+                <!-- BOTÕES DE AÇÃO -->
+                <!-- Aparece se usuario for coordenador ou admin -->
+                <div class="mb-1">
+                    <a href="{{ url_for('editar_equipe', equipe_id=equipe.id) }}"
+                    class="btn btn-outline-secondary btn-sm">
+                        ✏️ Editar Equipe
+                    </a>
+                </div>
                 <span class="badge {% if equipe.is_active %}bg-success{% else %}bg-secondary{% endif %}">
                     {% if equipe.is_active %}
                         Ativa
@@ -20,9 +24,13 @@
                         Inativa
                     {% endif %}
                 </span>
+                <h3 class="fw-bold mb-1">{{ equipe.nome_equipe }}</h3>
+                <p class="mb-1"><strong>Projeto:</strong> {{ equipe.projeto }}</p>
+                <p class="mb-1"><strong>Técnico:</strong> {{ equipe.tecnico }}</p>
+
             </div>
 
-            <div class="text-end">
+            <div>
                 <p class="mb-1"><strong>Criada em:</strong> {{ equipe.created_at }}</p>
                 <p class="mb-1"><strong>Total de atletas:</strong> {{ equipe.total_atletas }}</p>
             </div>

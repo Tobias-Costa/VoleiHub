@@ -2,6 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, SelectField, BooleanField
 from wtforms.validators import DataRequired, Length
 from flask import Flask, request, redirect, url_for, render_template, flash
+from sqlalchemy import and_, or_
 from flask_migrate import Migrate
 from datetime import datetime
 from models import *
@@ -67,9 +68,28 @@ class ProjetoForm(FlaskForm):
     responsavel_id = SelectField(
         'Responsável',
         coerce=int,
-        validators=[DataRequired(message="Selecione um responsável.")]
+        validators=[DataRequired(message="Selecione um responsável para coordenar o projeto.")]
     )
 
+class EquipeForm(FlaskForm):
+    nome_equipe = StringField(
+        "Nome da Equipe",
+        validators=[DataRequired(message="O nome da equipe é obrigatório."), Length(min=3, max=80)]
+    )
+
+    projeto_id = SelectField(
+        "Projeto",
+        coerce=int,
+        validators=[DataRequired(message="Selecione um projeto.")]
+    )
+
+    tecnico_id = SelectField(
+        "Técnico Responsável",
+        coerce=int,
+        validators=[DataRequired(message="Selecione um técnico para a equipe")]
+    )
+
+    is_active = BooleanField("Equipe ativa", default=True)
 
 # --- Rotas da Aplicação ---
 @app.route('/')
@@ -243,8 +263,76 @@ def editar_projeto():
 
 @app.route('/criar/equipe/', methods=["GET","POST"])
 def criar_equipe():
+    form = EquipeForm()
 
-    return render_template('criar_equipe.html')
+    # Popula projetos
+    form.projeto_id.choices = [
+        (p.id, p.nome_projeto)
+        for p in db.session.query(Projeto).filter(Projeto.is_active == True).all()
+    ]
+
+    # Popula técnicos
+    form.tecnico_id.choices = [
+        (u.id, f"{u.firstname_usuario} {u.lastname_usuario}")
+        for u in db.session.query(Usuario).filter(or_(Usuario.is_admin==True, Usuario.is_coord==True, Usuario.is_tecnico==True)).all()
+    ]
+
+    form.projeto_id.choices.insert(0, (0, "Selecione uma cidade"))
+    form.tecnico_id.choices.insert(0, (0, "Selecione um responsável"))
+
+    if form.validate_on_submit():
+        nova_equipe = Equipe(
+            nome_equipe=form.nome_equipe.data,
+            projeto_id=form.projeto_id.data,
+            tecnico_id=form.tecnico_id.data,
+        )
+
+        try:
+            db.session.add(nova_equipe)
+            db.session.commit()
+            flash("Equipe criada com sucesso!", "success")
+            return redirect(url_for("criar_equipe"))
+        except Exception:
+            db.session.rollback()
+            flash("Erro ao salvar equipe.", "danger")
+
+    return render_template('criar_equipe.html', form=form)
+
+@app.route('/editar/equipe/', methods=["GET","POST"])
+def editar_equipe():
+    equipe_id = request.args.get('equipe_id')
+    equipe = db.session.query(Equipe).get_or_404(equipe_id)
+    form = EquipeForm(obj=equipe)
+
+    # Popula projetos
+    form.projeto_id.choices = [
+        (p.id, p.nome_projeto)
+        for p in db.session.query(Projeto).filter(Projeto.is_active == True).all()
+    ]
+
+    # Popula técnicos
+    form.tecnico_id.choices = [
+        (u.id, f"{u.firstname_usuario} {u.lastname_usuario}")
+        for u in db.session.query(Usuario).filter(or_(Usuario.is_admin==True, Usuario.is_coord==True, Usuario.is_tecnico==True)).all()
+    ]
+
+    form.projeto_id.choices.insert(0, (0, "Selecione uma cidade"))
+    form.tecnico_id.choices.insert(0, (0, "Selecione um responsável"))
+
+    if form.validate_on_submit():
+        try:
+            equipe.nome_equipe = form.nome_equipe.data
+            equipe.projeto_id = form.projeto_id.data
+            equipe.tecnico_id = form.tecnico_id.data
+            equipe.is_active = form.is_active.data
+            db.session.commit()
+            flash("Equipe atualizada com sucesso!", "success")
+            return redirect(url_for("editar_equipe", equipe_id=equipe.id))
+        except Exception:
+            db.session.rollback()
+            flash("Erro ao atualizar equipe.", "danger")
+
+    return render_template('editar_equipe.html', form=form, equipe=equipe)
 
 @app.route('/criar/atleta/', methods=["GET","POST"])
 def criar_atleta():
@@ -317,7 +405,7 @@ def visualizar_equipe():
     niveis_query = db.session.query(Nivel)
     status_query = db.session.query(Status)
 
-    dados_equipe = {"nome_equipe":equipe.nome_equipe.title(),"projeto":projeto_equipe.nome_projeto.title(),"tecnico":tecnico_nome.title(),"is_active":bool(equipe.is_active),"created_at":datetime.strftime(equipe.created_at,"%d/%m/%Y"),"total_atletas":atletas_equipe.count()}
+    dados_equipe = {"id":equipe.id, "nome_equipe":equipe.nome_equipe.title(),"projeto":projeto_equipe.nome_projeto.title(),"tecnico":tecnico_nome.title(),"is_active":bool(equipe.is_active),"created_at":datetime.strftime(equipe.created_at,"%d/%m/%Y"),"total_atletas":atletas_equipe.count()}
 
     #Atletas da equipe
     #Dicionário tabela atletas-equipe
