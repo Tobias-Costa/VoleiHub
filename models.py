@@ -1,7 +1,7 @@
 from datetime import datetime
 from sqlalchemy import MetaData
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+from flask_login import UserMixin
 
 # 1. Defina a convenção de nomes
 convention = {
@@ -18,7 +18,7 @@ metadata = MetaData(naming_convention=convention)
 # 3. Inicialize o DB com esse metadata
 db = SQLAlchemy(metadata=metadata)
 
-class Usuario(db.Model):
+class Usuario(UserMixin, db.Model):
     __tablename__ = 'usuarios' 
 
     id = db.Column(db.Integer, primary_key=True)
@@ -158,8 +158,7 @@ class Atleta(db.Model):
     sexo_id = db.Column(db.Integer, db.ForeignKey('sexos.id'), nullable=False)
     modalidade_id = db.Column(db.Integer, db.ForeignKey('modalidades.id'), nullable=False)
     posicao_id = db.Column(db.Integer, db.ForeignKey('posicoes.id'), nullable=False)
-    # Se atente que categorias_id está no plural(possível modificacao refactor)
-    categorias_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=False)
+    categoria_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=False)
     nivel_id = db.Column(db.Integer, db.ForeignKey('niveis.id'), nullable=False)
     status_id = db.Column(db.Integer, db.ForeignKey('status.id'), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now) 

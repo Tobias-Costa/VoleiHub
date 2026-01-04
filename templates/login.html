@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block head %}
+<style>
+    /* Estilização da imagem lateral */
+    .login-img {
+        background: url("{{ url_for('static', filename='img/login.png') }}") center/cover no-repeat;
+        /* Border-radius apenas nos cantos esquerdos para um efeito moderno que encosta na borda direita */
+        border-radius: 40px;
+        
+    }
+    
+    /* Garante que o container não tenha scroll horizontal indesejado */
+    body, html {
+        overflow-x: hidden;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-0 vh-100">
+    <div class="row g-0 h-100"> <!-- g-0 remove o espaçamento lateral entre colunas -->
+
+        <!-- Formulário (Esquerda) -->
+        <!-- col-lg-6 garante 50% de largura no desktop. col-12 garante 100% no celular -->
+        <div class="col-12 col-lg-6 d-flex align-items-center justify-content-center bg-white">
+            <div class="w-100 px-4" style="max-width: 450px;">
+                
+                
+                <div class="text-center mb-5">
+                    <h2 class="fw-bold text-dark">Bem-vindo de volta</h2>
+                    <p class="text-muted">Acesse sua conta para continuar</p>
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.email.label(class="form-label fw-semibold") }}
+                        {{ form.email(class="form-control form-control-lg", placeholder="exemplo@email.com") }}
+                        {% for error in form.email.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-4">
+                        {{ form.password.label(class="form-label fw-semibold") }}
+                        {{ form.password(class="form-control form-control-lg", placeholder="Sua senha") }}
+                        {% for error in form.password.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-grid mb-4">
+                        {{ form.submit(class="btn btn-primary btn-lg shadow-sm") }}
+                    </div>
+                </form>
+
+                <div class="text-center">
+                    <span class="text-muted">Ainda não tem conta?</span>
+                    <a href="{{ url_for('cadastro_usuario') }}" class="fw-bold text-decoration-none">
+                        Crie uma agora
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Imagem lateral (Direita) -->
+        <!-- col-lg-6 faz com que ela ocupe exatamente os outros 50% da tela -->
+        <!-- d-none d-lg-flex esconde no celular para o texto encher a tela -->
+        <div class="col-lg-6 d-none d-lg-flex login-img shadow-lg mb-4">
+            <!-- Div vazia apenas para renderizar o background -->
+        </div>
+
+    </div>
+</div>
+{% endblock %}
