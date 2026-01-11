@@ -4,15 +4,23 @@
 {% block content %}
 
 <!-- ================= PROJETO ================= -->
+
 <div class="d-flex justify-content-between align-items-start flex-wrap mb-4">
     <div>
         <!-- BOTÕES DE AÇÃO -->
-        <!-- Aparece se usuario for coordenador ou admin -->
-        <div class="mb-3">
+        <div class="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-4">
+            <!-- Em breve será painel do usuário -->
+            <a href="{{ url_for('home') }}" class="btn btn-info text-light">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+
+            {% if can_edit %}
             <a href="{{ url_for('editar_projeto', projeto_id=projeto.id) }}"
             class="btn btn-outline-secondary btn-sm">
                 ✏️ Editar Projeto
             </a>
+            {% endif %}
+            
         </div>
         {% if projeto.is_active %}
             <span class="badge bg-success mb-2">
@@ -23,7 +31,7 @@
                 Inativo
             </span>
         {% endif %}
-        <h3 class="fw-bold mb-1">{{ projeto.nome_projeto.title() }}</h3>
+        <h3 class="fw-bold mb-1">{{ projeto.nome_projeto }}</h3>
         {% if projeto.descricao %}
             <p class="text-muted mb-2">{{ projeto.descricao }}</p>
         {% endif %}
@@ -35,8 +43,8 @@
     <div class="row w-100">
     <!-- Primeira Coluna -->
     <div class="col-6">
-        <p class="mb-1"><strong>Cidade:</strong> {{ cidade.nome_cidade.title() }} </p>
-        <p class="mb-1"><strong>Responsável:</strong> {{ responsavel.firstname_usuario.title() }} {{ responsavel.lastname_usuario }} </p>
+        <p class="mb-1"><strong>Cidade:</strong> {{ nome_cidade }} </p>
+        <p class="mb-1"><strong>Responsável:</strong> {{ nome_responsavel }} </p>
         <p class="mb-1"><strong>Criado em:</strong> {{ data_criacao }}</p>
     </div>
 
@@ -69,8 +77,8 @@
             <tbody>
                 {% for equipe in equipes %}
                 <tr>
-                    <td>{{ equipe.nome_equipe.title() }}</td>
-                    <td>{{ equipe.tecnico.title() }}</td>
+                    <td>{{ equipe.nome_equipe }}</td>
+                    <td>{{ equipe.tecnico }}</td>
                     <td>
                         {% if equipe.is_active %}
                             <span class="badge bg-success">Ativa</span>
@@ -123,16 +131,16 @@
             <tbody>
                 {% for atleta in atletas %}
                 <tr>
-                    <td>{{ atleta.nome_atleta.title() }}</td>
-                    <td>{{ atleta.equipe.title() }}</td>
-                    <td>{{ atleta.modalidade.title() }}</td>
-                    <td>{{ atleta.posicao.title() }}</td>
-                    <td>{{ atleta.categoria.title() }}</td>
-                    <td>{{ atleta.nivel.title() }}</td>
+                    <td>{{ atleta.nome_atleta }}</td>
+                    <td>{{ atleta.equipe }}</td>
+                    <td>{{ atleta.modalidade }}</td>
+                    <td>{{ atleta.posicao }}</td>
+                    <td>{{ atleta.categoria }}</td>
+                    <td>{{ atleta.nivel }}</td>
                     <td>
                         <span class="badge bg-info">
                             <!-- feat: dicionar sistema de cores para cada status -->
-                            {{ atleta.status.title() }}
+                            {{ atleta.status }}
                         </span>
                     </td>
                     <td class="text-end">

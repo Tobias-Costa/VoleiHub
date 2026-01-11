@@ -1,7 +1,14 @@
 from datetime import datetime
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, event
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
+from sqlalchemy.engine import Engine
+
+@event.listens_for(Engine, "connect")
+def enable_sqlite_fk(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 # 1. Defina a convenção de nomes
 convention = {
@@ -53,7 +60,7 @@ class Cidade(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     nome_cidade = db.Column(db.String(40), unique=True, nullable=False)
-    estado_id = db.Column(db.Integer, db.ForeignKey('estados.id'), nullable=False)
+    estado_id = db.Column(db.Integer, db.ForeignKey('estados.id', ondelete="CASCADE"), nullable=False)
     
     def __repr__(self):
         return f'<Cidade {self.nome_cidade}>'
@@ -65,8 +72,8 @@ class Projeto(db.Model):
     nome_projeto = db.Column(db.String(80), unique=True, nullable=False)
     descricao = db.Column(db.Text, nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
-    cidade_id = db.Column(db.Integer, db.ForeignKey('cidades.id'), nullable=False)
-    responsavel_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    cidade_id = db.Column(db.Integer, db.ForeignKey('cidades.id', ondelete="CASCADE"), nullable=False)
+    responsavel_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete="CASCADE"), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now) 
     last_edited = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now) 
      
@@ -78,8 +85,8 @@ class Equipe(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     nome_equipe = db.Column(db.String(80), unique=True, nullable=False)
-    projeto_id = db.Column(db.Integer, db.ForeignKey('projetos.id'), nullable=False)
-    tecnico_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    projeto_id = db.Column(db.Integer, db.ForeignKey('projetos.id', ondelete="CASCADE"), nullable=False)
+    tecnico_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete="CASCADE"), nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now) 
     last_edited = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now) 
@@ -146,7 +153,7 @@ class Atleta(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     # profile_picture_url = Column(String(255), nullable=True) 
-    equipe_id = db.Column(db.Integer, db.ForeignKey('equipes.id'), nullable=False)
+    equipe_id = db.Column(db.Integer, db.ForeignKey('equipes.id', ondelete="CASCADE"), nullable=False)
     firstname_atleta = db.Column(db.String(80), nullable=False)
     lastname_atleta = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
@@ -155,12 +162,12 @@ class Atleta(db.Model):
     data_nascimento =  db.Column(db.Date, nullable=False)
     telefone1 = db.Column(db.String(20), nullable=False)
     telefone2 = db.Column(db.String(20), nullable=True)
-    sexo_id = db.Column(db.Integer, db.ForeignKey('sexos.id'), nullable=False)
-    modalidade_id = db.Column(db.Integer, db.ForeignKey('modalidades.id'), nullable=False)
-    posicao_id = db.Column(db.Integer, db.ForeignKey('posicoes.id'), nullable=False)
-    categoria_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=False)
-    nivel_id = db.Column(db.Integer, db.ForeignKey('niveis.id'), nullable=False)
-    status_id = db.Column(db.Integer, db.ForeignKey('status.id'), nullable=False)
+    sexo_id = db.Column(db.Integer, db.ForeignKey('sexos.id', ondelete="RESTRICT"), nullable=False)
+    modalidade_id = db.Column(db.Integer, db.ForeignKey('modalidades.id', ondelete="RESTRICT"), nullable=False)
+    posicao_id = db.Column(db.Integer, db.ForeignKey('posicoes.id', ondelete="RESTRICT"), nullable=False)
+    categoria_id = db.Column(db.Integer, db.ForeignKey('categorias.id', ondelete="RESTRICT"), nullable=False)
+    nivel_id = db.Column(db.Integer, db.ForeignKey('niveis.id', ondelete="RESTRICT"), nullable=False)
+    status_id = db.Column(db.Integer, db.ForeignKey('status.id', ondelete="RESTRICT"), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now) 
     last_edited = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now) 
      
@@ -171,12 +178,12 @@ class AtletaEndereco(db.Model):
     __tablename__ = 'enderecos'
 
     id = db.Column(db.Integer, primary_key=True)
-    atleta_id = db.Column(db.Integer, db.ForeignKey('atletas.id'), nullable=False)
+    atleta_id = db.Column(db.Integer, db.ForeignKey('atletas.id', ondelete="CASCADE"), nullable=False)
     logradouro = db.Column(db.String(255), nullable=False)
     numero = db.Column(db.String(20), nullable=False) # Armazenar como string para incluir 's/n', 'apto 101'
     complemento = db.Column(db.String(100), nullable=True)
     bairro = db.Column(db.String(100), nullable=False)
-    cidade_id = db.Column(db.Integer, db.ForeignKey('cidades.id'), nullable=False)
+    cidade_id = db.Column(db.Integer, db.ForeignKey('cidades.id', ondelete="CASCADE"), nullable=False)
     cep = db.Column(db.String(8), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now) 
     last_edited = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now) 
@@ -188,13 +195,13 @@ class Transferencia(db.Model):
     __tablename__ = 'transferencias'
 
     id = db.Column(db.Integer, primary_key=True)
-    atleta_id = db.Column(db.Integer, db.ForeignKey('atletas.id'), nullable=False)
-    projeto_origem_id = db.Column(db.Integer, db.ForeignKey('projetos.id'), nullable=False)
-    equipe_origem_id = db.Column(db.Integer, db.ForeignKey('equipes.id'), nullable=False)
-    projeto_destino_id = db.Column(db.Integer, db.ForeignKey('projetos.id'), nullable=False)
-    equipe_destino_id = db.Column(db.Integer, db.ForeignKey('equipes.id'), nullable=False)
+    atleta_id = db.Column(db.Integer, db.ForeignKey('atletas.id', ondelete="CASCADE"), nullable=False)
+    projeto_origem_id = db.Column(db.Integer, db.ForeignKey('projetos.id', ondelete="CASCADE"), nullable=False)
+    equipe_origem_id = db.Column(db.Integer, db.ForeignKey('equipes.id', ondelete="CASCADE"), nullable=False)
+    projeto_destino_id = db.Column(db.Integer, db.ForeignKey('projetos.id', ondelete="CASCADE"), nullable=False)
+    equipe_destino_id = db.Column(db.Integer, db.ForeignKey('equipes.id', ondelete="CASCADE"), nullable=False)
     motivo = db.Column(db.String(255), nullable=True)
-    responsavel_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    responsavel_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete="CASCADE"), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now) 
 
     def __repr__(self):
@@ -204,12 +211,12 @@ class AtletaHistorico(db.Model):
     __tablename__ = 'historicos'
 
     id = db.Column(db.Integer, primary_key=True)
-    atleta_id = db.Column(db.Integer, db.ForeignKey('atletas.id'), nullable=False)
-    projeto_id = db.Column(db.Integer, db.ForeignKey('projetos.id'), nullable=False)
-    equipe_id = db.Column(db.Integer, db.ForeignKey('equipes.id'), nullable=False)
-    status_id = db.Column(db.Integer, db.ForeignKey('status.id'), nullable=False)
+    atleta_id = db.Column(db.Integer, db.ForeignKey('atletas.id', ondelete="CASCADE"), nullable=False)
+    projeto_id = db.Column(db.Integer, db.ForeignKey('projetos.id', ondelete="CASCADE"), nullable=False)
+    equipe_id = db.Column(db.Integer, db.ForeignKey('equipes.id', ondelete="CASCADE"), nullable=False)
+    status_id = db.Column(db.Integer, db.ForeignKey('status.id', ondelete="CASCADE"), nullable=False)
     motivo = db.Column(db.String(255), nullable=True)
-    responsavel_id = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=False)
+    responsavel_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete="CASCADE"), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now) 
     
     def __repr__(self):

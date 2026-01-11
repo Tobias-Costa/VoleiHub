@@ -1,9 +1,10 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, SelectField, BooleanField, DateField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, Optional
-from flask import Flask, request, redirect, url_for, render_template, flash
+from flask import Flask, request, redirect, url_for, render_template, flash, abort
 from sqlalchemy import or_
 from flask_migrate import Migrate
+from admin import init_admin 
 from datetime import datetime
 from models import *
 from dotenv import load_dotenv
@@ -60,17 +61,17 @@ app = Flask(__name__)
 lm = LoginManager(app)
 lm.login_view = 'login'
 lm.login_message = None
-
 # Configuração do banco de dados SQLite
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", "chave-padrao-de-desenvolvimento")
 # Inicializa o 'db' e as migrações com o aplicativo 'app'
 db.init_app(app)
-migrate = Migrate(app, db, render_as_batch=True) 
+migrate = Migrate(app, db, render_as_batch=True)
+init_admin(app) 
 
 @lm.user_loader
 def user_loader(id):
-    usuario = Usuario.query.get_or_404(id)
+    usuario = db.session.query(Usuario).filter_by(id=id).first()
     return usuario
 
 # --- Classes de formulários ---
@@ -334,9 +335,9 @@ def home():
     total_atletas = atletas_query.count()
 
     # Status Atletas
-    id_status_ativo = id_status_query.filter_by(nome_status="ativo").scalar()
-    id_status_lesionado = id_status_query.filter_by(nome_status="lesionado").scalar()
-    id_status_suspenso = id_status_query.filter_by(nome_status="suspenso").scalar()
+    id_status_ativo = id_status_query.filter_by(nome_status="ATIVO").scalar()
+    id_status_lesionado = id_status_query.filter_by(nome_status="LESIONADO").scalar()
+    id_status_suspenso = id_status_query.filter_by(nome_status="SUSPENSO").scalar()
 
     atletas_ativos = atletas_query.filter_by(status_id=id_status_ativo).count()
     atletas_lesionados = atletas_query.filter_by(status_id=id_status_lesionado).count()
@@ -397,9 +398,24 @@ def home():
 
     return render_template('dashboard.html', n_projetos_ativos=total_projetos_ativos, n_equipes_ativas=total_equipes_ativas, n_atletas=total_atletas, atletas_ativos=atletas_ativos, atletas_lesionados=atletas_lesionados, atletas_suspensos=atletas_suspensos, transferencias=transferencias, projetos=projetos, cidades=cidades)
 
+@app.route('/coordenador/dashboard/')
+@login_required
+def coordenador_dashboard():
+    pass
+
+@app.route('/tecnico/dashboard/')
+@login_required
+def tecnico_dashboard():
+    pass
+
 @app.route('/criar/projeto/', methods=["GET","POST"])
 @login_required
 def criar_projeto():
+
+    #Verifica se tem acesso(admin ou coordenador)
+    if not (current_user.is_admin or current_user.is_coord):
+        abort(403)
+
     form = ProjetoForm()
 
     # Popula cidades
@@ -418,16 +434,19 @@ def criar_projeto():
     ]
 
     # Popula responsáveis
-    form.responsavel_id.choices = [
-        (usuario.id, f"{usuario.firstname_usuario.title()} {usuario.lastname_usuario.title()}")
-        for usuario in db.session.query(Usuario).all()
-    ]
+    if current_user.is_admin:
+        responsaveis = Usuario.query.filter(or_(Usuario.is_admin == True, Usuario.is_coord == True)).all()
+    else:
+        responsaveis = [current_user]
+
+    form.responsavel_id.choices = [(u.id, f"{u.firstname_usuario.title()} {u.lastname_usuario.title()}") for u in responsaveis]
 
     # Opção inicial
     form.cidade_id.choices.insert(0, (0, "Selecione uma cidade"))
     form.responsavel_id.choices.insert(0, (0, "Selecione um responsável"))
 
     if form.validate_on_submit():
+
         try:
             novo_projeto = Projeto(
                 nome_projeto=form.nome_projeto.data.upper(),
@@ -449,7 +468,19 @@ def criar_projeto():
 @login_required
 def editar_projeto():
     projeto_id = request.args.get("projeto_id")
-    projeto = Projeto.query.get_or_404(projeto_id)
+
+    #Verifica se tem acesso(admin ou coordenador do projeto)
+    projeto_query = db.session.query(Projeto).filter(Projeto.id==projeto_id)
+
+    if current_user.is_admin:
+        pass
+    elif current_user.is_coord:
+        projeto_query = projeto_query.filter(Projeto.responsavel_id == current_user.id)
+    else:
+        abort(403)
+
+    projeto = projeto_query.first_or_404()
+
     form = ProjetoForm(obj=projeto)
 
     form.cidade_id.choices = [
@@ -467,10 +498,12 @@ def editar_projeto():
     ]
 
     # Popula responsáveis
-    form.responsavel_id.choices = [
-        (usuario.id, f"{usuario.firstname_usuario.title()} {usuario.lastname_usuario.title()}")
-        for usuario in db.session.query(Usuario).all()
-    ]
+    if current_user.is_admin:
+        responsaveis = Usuario.query.filter(or_(Usuario.is_admin == True, Usuario.is_coord == True)).all()
+    else:
+        responsaveis = [current_user]
+
+    form.responsavel_id.choices = [(u.id, f"{u.firstname_usuario.title()} {u.lastname_usuario.title()}") for u in responsaveis]
 
     # Opção inicial
     form.cidade_id.choices.insert(0, (0, "Selecione uma cidade"))
@@ -495,18 +528,34 @@ def editar_projeto():
 @app.route('/criar/equipe/', methods=["GET","POST"])
 @login_required
 def criar_equipe():
+    #Verifica se tem acesso(admin ou coordenador)
+    if not (current_user.is_admin or current_user.is_coord):
+        abort(403)
+
     form = EquipeForm()
 
     # Popula projetos
-    form.projeto_id.choices = [
-        (p.id, p.nome_projeto)
-        for p in db.session.query(Projeto).filter(Projeto.is_active == True).all()
-    ]
+    projetos_query = Projeto.query.filter(Projeto.is_active == True)
 
-    # Popula técnicos
+    if current_user.is_admin:
+        pass
+    else:
+        projetos_query = projetos_query.filter(Projeto.responsavel_id == current_user.id)
+
+    projetos = projetos_query.all()
+
+    form.projeto_id.choices = [(p.id, p.nome_projeto.title()) for p in projetos]
+
+    # Popula técnicos(Todos que são técnicos + usuário)
+    tecnicos = Usuario.query.filter(Usuario.is_tecnico == True).all()
+    usuarios_tecnicos = tecnicos.copy()
+
+    if current_user.id not in [u.id for u in usuarios_tecnicos]:
+        usuarios_tecnicos.insert(0, current_user)
+
     form.tecnico_id.choices = [
-        (u.id, f"{u.firstname_usuario} {u.lastname_usuario}")
-        for u in db.session.query(Usuario).filter(or_(Usuario.is_admin==True, Usuario.is_coord==True, Usuario.is_tecnico==True)).all()
+        (u.id, f"{u.firstname_usuario.title()} {u.lastname_usuario.title()}")
+        for u in usuarios_tecnicos
     ]
 
     form.projeto_id.choices.insert(0, (0, "Selecione uma cidade"))
@@ -534,19 +583,50 @@ def criar_equipe():
 @login_required
 def editar_equipe():
     equipe_id = request.args.get('equipe_id')
-    equipe = Equipe.query.get_or_404(equipe_id)
+
+    #Verifica se tem acesso(admin ou coordenador do projeto)
+
+    equipe_query = (
+    db.session.query(Equipe)
+    .join(Projeto, Projeto.id == Equipe.projeto_id)
+    .filter(Equipe.id == equipe_id)
+    )
+        
+    if current_user.is_admin:
+        pass
+    elif current_user.is_coord:
+        equipe_query = equipe_query.filter(Projeto.responsavel_id == current_user.id)
+    # elif current_user.is_tecnico:
+    #     equipe_query = equipe_query.filter(Equipe.tecnico_id == current_user.id)
+    else:
+        abort(403)
+
+    equipe = equipe_query.first_or_404()
+
     form = EquipeForm(obj=equipe)
 
     # Popula projetos
-    form.projeto_id.choices = [
-        (p.id, p.nome_projeto)
-        for p in db.session.query(Projeto).filter(Projeto.is_active == True).all()
-    ]
+    projetos_query = Projeto.query.filter(Projeto.is_active == True)
 
-    # Popula técnicos
+    if current_user.is_admin:
+        pass
+    else:
+        projetos_query = projetos_query.filter(Projeto.responsavel_id == current_user.id)
+
+    projetos = projetos_query.all()
+
+    form.projeto_id.choices = [(p.id, p.nome_projeto.title()) for p in projetos]
+
+    # Popula técnicos(Todos que são técnicos + usuário)
+    tecnicos = Usuario.query.filter(Usuario.is_tecnico == True).all()
+    usuarios_tecnicos = tecnicos.copy()
+
+    if current_user.id not in [u.id for u in usuarios_tecnicos]:
+        usuarios_tecnicos.insert(0, current_user)
+
     form.tecnico_id.choices = [
-        (u.id, f"{u.firstname_usuario} {u.lastname_usuario}")
-        for u in db.session.query(Usuario).filter(or_(Usuario.is_admin==True, Usuario.is_coord==True, Usuario.is_tecnico==True)).all()
+        (u.id, f"{u.firstname_usuario.title()} {u.lastname_usuario.title()}")
+        for u in usuarios_tecnicos
     ]
 
     form.projeto_id.choices.insert(0, (0, "Selecione uma cidade"))
@@ -570,12 +650,36 @@ def editar_equipe():
 @app.route('/criar/atleta/', methods=["GET","POST"])
 @login_required
 def criar_atleta():
+    #Verifica se tem acesso(admin, coordenador ou tecnico)
+    if not( current_user.is_admin or current_user.is_coord or current_user.is_tecnico ):
+        abort(403)
+
     form = AtletaForm()
 
-    # Popula selects (SEM relationships)
-    # Retorna todas as equipes do projeto do responsável
-    #Equipe - Projeto
-    form.equipe_id.choices = [(e.id, e.nome_equipe.title()) for e in Equipe.query.all()]
+    # Popula selects de Equipes
+    equipe_query = (
+        db.session.query(
+            Equipe.id,
+            Equipe.nome_equipe,
+            Projeto.nome_projeto
+            ).join(Projeto, Projeto.id == Equipe.projeto_id)
+    )
+
+    if current_user.is_admin:
+        pass
+    elif current_user.is_coord:
+        equipe_query = equipe_query.filter(
+            Projeto.responsavel_id == current_user.id
+        )
+    elif current_user.is_tecnico:
+        equipe_query = equipe_query.filter(
+            Equipe.tecnico_id == current_user.id
+        )
+
+    form.equipe_id.choices = [
+        (equipe_id, f"{nome_equipe.title()} - {nome_projeto.title()}")
+        for equipe_id, nome_equipe, nome_projeto in equipe_query.all()
+    ]
 
     form.sexo_id.choices = [(s.id, s.sexo.title()) for s in Sexo.query.all()]
     form.modalidade_id.choices = [(m.id, m.nome_modalidade.title()) for m in Modalidade.query.all()]
@@ -613,27 +717,25 @@ def criar_atleta():
 
         try:
             db.session.add(novo_atleta)
+            db.session.flush()  # Gera o ID sem dar commit
+
+            # Busca equipe e projeto
+            equipe_atleta = db.session.query(Equipe).filter(Equipe.id == novo_atleta.equipe_id).first()
+            projeto_atleta = db.session.query(Projeto).filter(Projeto.id == equipe_atleta.projeto_id).first()
+
+            # Cria histórico
+            novo_historico = AtletaHistorico(
+                atleta_id=novo_atleta.id,
+                projeto_id=projeto_atleta.id,
+                equipe_id=equipe_atleta.id,
+                status_id=novo_atleta.status_id,
+                motivo="Adicionado à equipe",
+                responsavel_id=current_user.id 
+            )
+
+            db.session.add(novo_historico)
             db.session.commit()
             flash("Atleta criado com sucesso!", "success")
-            # try:
-            #     equipe_atleta = db.session.query(Equipe).filter(Equipe.id==novo_atleta.equipe_id).scalar()
-            #     projeto_atleta = db.session.query(Projeto).filter(Projeto.id==equipe_atleta.projeto_id).scalar()
-
-            #     NovoStatus = AtletaHistorico(
-            #         atleta_id=novo_atleta.id,
-            #         projeto_id=projeto_atleta.id,
-            #         equipe_atleta=equipe_atleta.id,
-            #         status_id=novo_atleta.status_id,
-            #         motivo="Adicionado à equipe",
-            #         # responsavel_id=Usuário
-            #     )
-            #     db.session.add(novo_atleta)
-            #     db.session.commit()
-            #     flash("Atleta criado com sucesso!", "success")
-            #     except Exception:
-            #     db.session.rollback()
-            #     flash("Erro ao cadastrar atleta.", "danger")
-            # redireciona para criar endereço
             return redirect(url_for("criar_endereco_atleta", atleta_id=novo_atleta.id))
         except Exception:
             db.session.rollback()
@@ -645,13 +747,68 @@ def criar_atleta():
 @login_required
 def editar_atleta():
     atleta_id = request.args.get("atleta_id")
-    atleta = Atleta.query.get_or_404(atleta_id)
+
+    #Verifica se tem acesso(admin ou coordenador do projeto ou tecnico da equipe)
+    
+    atleta_query = (
+    db.session.query(Atleta, Projeto)
+    .join(Equipe, Equipe.id == Atleta.equipe_id)
+    .join(Projeto, Projeto.id == Equipe.projeto_id)
+    .filter(Atleta.id == atleta_id)
+    )
+
+    if current_user.is_admin:
+        pass
+    elif current_user.is_coord:
+        atleta_query = atleta_query.filter(
+            Projeto.responsavel_id == current_user.id
+        )
+    elif current_user.is_tecnico:
+        atleta_query = atleta_query.filter(
+            Equipe.tecnico_id == current_user.id
+        )
+    else:
+        abort(403)
+
+    result = atleta_query.first_or_404()
+    atleta = result.Atleta
+    projeto_atual = result.Projeto
+
+    # 🔒 Salvando estado anterior
+    status_anterior_id = atleta.status_id
+    equipe_anterior_id = atleta.equipe_id
+    projeto_anterior_id = projeto_atual.id
+
     form = AtletaForm(obj=atleta)
 
-    # Popula selects 
-    # Retorna todas as equipes do projeto do responsável
-    form.equipe_id.choices = [(e.id, e.nome_equipe.title()) for e in Equipe.query.all()]
+    # =========================
+    # POPULA EQUIPES
+    # =========================
+    equipe_query = (
+        db.session.query(
+            Equipe.id,
+            Equipe.nome_equipe,
+            Projeto.nome_projeto
+            ).join(Projeto, Projeto.id == Equipe.projeto_id)
+    )
 
+    if current_user.is_admin or current_user.is_coord:
+        #Mostra todos os projetos em caso de desejo de transferência
+        pass
+    elif current_user.is_tecnico:
+        # Aparece somente equipes do projeto do atleta e não mais equipes do técnico
+        equipe_query = equipe_query.filter(
+            Projeto.id == projeto_atual.id
+        )
+
+    form.equipe_id.choices = [
+        (equipe_id, f"{nome_equipe.title()} - {nome_projeto.title()}")
+        for equipe_id, nome_equipe, nome_projeto in equipe_query.all()
+    ]
+
+    # =========================
+    # DEMAIS SELECTS
+    # =========================
     form.sexo_id.choices = [(s.id, s.sexo.title()) for s in Sexo.query.all()]
     form.modalidade_id.choices = [(m.id, m.nome_modalidade.title()) for m in Modalidade.query.all()]
     form.posicao_id.choices = [(p.id, p.nome_posicao.title()) for p in Posicao.query.all()]
@@ -670,22 +827,70 @@ def editar_atleta():
     if form.validate_on_submit():
 
         try:
+            status_novo_id = form.status_id.data
+            equipe_nova_id = form.equipe_id.data
+
+            # Atualiza dados básicos
             atleta.firstname_atleta=form.firstname_atleta.data.upper()
             atleta.lastname_atleta=form.lastname_atleta.data.upper()
-            atleta.equipe_id=form.equipe_id.data
             atleta.email=form.email.data.lower()
             atleta.data_nascimento=form.data_nascimento.data
-            atleta.telefone1=form.telefone1.data
-            atleta.telefone2=form.telefone2.data
-            atleta.rg=form.rg.data
-            atleta.cpf=form.cpf.data
+            atleta.telefone1=somente_digitos(form.telefone1.data)
+            atleta.telefone2=somente_digitos(form.telefone2.data)
+            atleta.rg=somente_digitos(form.rg.data)
+            atleta.cpf=somente_digitos(form.cpf.data)
             atleta.sexo_id=form.sexo_id.data
             atleta.modalidade_id=form.modalidade_id.data
             atleta.posicao_id=form.posicao_id.data
             atleta.categoria_id=form.categoria_id.data
             atleta.nivel_id=form.nivel_id.data
-            atleta.status_id=form.status_id.data
-            db.session.commit()
+
+            # =====================
+            # 🔄 TRANSFERÊNCIA
+            # =====================
+            if equipe_nova_id != equipe_anterior_id:
+                equipe_nova = db.session.query(Equipe).filter(Equipe.id == equipe_nova_id).first()
+
+                transferencia = Transferencia(
+                    atleta_id=atleta.id,
+                    equipe_origem_id=equipe_anterior_id,
+                    equipe_destino_id=equipe_nova_id,
+                    projeto_origem_id=projeto_anterior_id,
+                    projeto_destino_id=equipe_nova.projeto_id,
+                    responsavel_id=current_user.id
+                )
+                db.session.add(transferencia)
+
+                historico_transferencia = AtletaHistorico(
+                    atleta_id=atleta.id,
+                    projeto_id=equipe_nova.projeto_id,
+                    equipe_id=equipe_nova_id,
+                    status_id=status_novo_id,
+                    motivo="Transferência de equipe",
+                    responsavel_id=current_user.id
+                )
+                db.session.add(historico_transferencia)
+
+                atleta.equipe_id = equipe_nova_id
+                atleta.status_id = status_novo_id
+
+            # =====================
+            # 🔁 STATUS
+            # =====================
+            elif status_novo_id != status_anterior_id:
+                historico_status = AtletaHistorico(
+                    atleta_id=atleta.id,
+                    projeto_id=projeto_anterior_id,
+                    equipe_id=atleta.equipe_id,
+                    status_id=status_novo_id,
+                    motivo="Alteração de status",
+                    responsavel_id=current_user.id
+                )
+                db.session.add(historico_status)
+
+                atleta.status_id = status_novo_id
+
+            db.session.commit()            
             flash("Atleta atualizado com sucesso!", "success")
             return redirect(url_for("editar_atleta", atleta_id=atleta.id))
         except Exception:
@@ -698,10 +903,33 @@ def editar_atleta():
 @login_required
 def criar_endereco_atleta():
     atleta_id = request.args.get("atleta_id")
-    atleta = Atleta.query.get_or_404(atleta_id)
+
+    atleta_endereco_query = (
+        db.session.query(Atleta)
+        .join(Equipe, Equipe.id == Atleta.equipe_id)
+        .join(Projeto, Projeto.id == Equipe.projeto_id)
+        .filter(Atleta.id == atleta_id)
+    )
+
+    #Verifica se tem acesso(admin, coordenador do projeto ou tecnico da equipe do atleta)
+    if current_user.is_admin:
+        pass
+    elif current_user.is_coord:
+        atleta_endereco_query = atleta_endereco_query.filter(
+            Projeto.responsavel_id == current_user.id
+        )
+    elif current_user.is_tecnico:
+        atleta_endereco_query = atleta_endereco_query.filter(
+            Equipe.tecnico_id == current_user.id
+        )
+    else:
+        abort(403)
+
+    atleta = atleta_endereco_query.first_or_404()
+
     form = EnderecoAtletaForm()
 
-    # Popula cidades (SEM relationships)
+    # Popula cidades
     form.cidade_id.choices = [
         (cidade_id, f"{nome_cidade.title()} - {abreviacao}")
         for cidade_id, nome_cidade, abreviacao in (
@@ -728,7 +956,7 @@ def criar_endereco_atleta():
                 complemento=form.complemento.data.upper(),
                 bairro=form.bairro.data.upper(),
                 cidade_id=form.cidade_id.data,
-                cep=form.cep.data
+                cep=somente_digitos(form.cep.data)
             )
 
             db.session.add(endereco)
@@ -752,10 +980,46 @@ def criar_endereco_atleta():
 def editar_endereco_atleta():
     atleta_id = request.args.get("atleta_id")
     atleta = Atleta.query.get_or_404(atleta_id)
-    endereco_atleta = db.session.query(AtletaEndereco).filter(AtletaEndereco.atleta_id==atleta.id).scalar()
+
+    endereco_existe = (
+        db.session.query(AtletaEndereco)
+        .filter(AtletaEndereco.atleta_id == atleta.id)
+        .first()
+    )
+    #Verifica se existe o endereço de fato no bd
+    # Na rota de criar endereço há verificação de permissão
+    if not endereco_existe:
+        return redirect(
+            url_for("criar_endereco_atleta", atleta_id=atleta.id)
+        )
+    
+    #Verifica se tem acesso(admin ou coordenador do projeto ou tecnico da equipe)
+
+    endereco_atleta_query = (
+    db.session.query(AtletaEndereco)
+    .join(Atleta, Atleta.id == AtletaEndereco.atleta_id)
+    .join(Equipe, Equipe.id == Atleta.equipe_id)
+    .join(Projeto, Projeto.id == Equipe.projeto_id)
+    .filter(AtletaEndereco.atleta_id == atleta.id)
+    )
+
+    if current_user.is_admin:
+        pass
+    elif current_user.is_coord:
+        endereco_atleta_query = endereco_atleta_query.filter(
+            Projeto.responsavel_id == current_user.id
+        )
+    elif current_user.is_tecnico:
+        endereco_atleta_query = endereco_atleta_query.filter(
+            Equipe.tecnico_id == current_user.id
+        )
+    else:
+        abort(403)
+
+    endereco_atleta = endereco_atleta_query.first_or_404()
+
     form = EnderecoAtletaForm(obj=endereco_atleta)
 
-    # Popula cidades (SEM relationships)
     form.cidade_id.choices = [
         (cidade_id, f"{nome_cidade.title()} - {abreviacao}")
         for cidade_id, nome_cidade, abreviacao in (
@@ -780,7 +1044,7 @@ def editar_endereco_atleta():
             endereco_atleta.complemento = form.complemento.data.upper()
             endereco_atleta.bairro = form.bairro.data.upper()
             endereco_atleta.cidade_id = form.cidade_id.data
-            endereco_atleta.cep = form.cep.data
+            endereco_atleta.cep = somente_digitos(form.cep.data)
             db.session.commit()
 
             flash("Endereço atualizado com sucesso!", "success")
@@ -806,9 +1070,7 @@ def visualizar_projeto():
     dados_projeto = {"id":projeto.id, "nome_projeto":projeto.nome_projeto.title(), "descricao":projeto.descricao, "is_active":bool(projeto.is_active)}
 
     projeto_equipes = db.session.query(Equipe).filter_by(projeto_id=projeto.id)
-
     projeto_atletas = db.session.query(Atleta).join(Equipe, Equipe.id == Atleta.equipe_id).filter(Equipe.projeto_id == projeto.id)
-
     cidade = db.session.query(Cidade).filter(Cidade.id == projeto.cidade_id).scalar()
 
     usuarios_query = db.session.query(Usuario)
@@ -845,8 +1107,10 @@ def visualizar_projeto():
         status_atleta = status_query.filter(Status.id==atleta.status_id).scalar().nome_status
 
         atletas.append({"id":atleta.id, "nome_atleta":atleta.firstname_atleta.title(), "equipe":equipe_atleta.nome_equipe.title(), "modalidade":modalidade_atleta.title(), "posicao":posicao_atleta.title(), "categoria":categoria_atleta.title(), "nivel":nivel_atleta.title(), "status":status_atleta.title()})
-
-    return render_template('visualizar_projeto.html', projeto=dados_projeto, nome_cidade=cidade.nome_cidade.title(), nome_responsavel=nome_responsavel, data_criacao=datetime.strftime(projeto.created_at,"%d/%m/%Y"), n_equipes=projeto_equipes.count(), n_atletas=projeto_atletas.count(), equipes=equipes, atletas=atletas)
+    
+    can_edit = ((current_user.is_admin) or (current_user.is_coord and current_user.id==projeto.responsavel_id))
+        
+    return render_template('visualizar_projeto.html', projeto=dados_projeto, nome_cidade=cidade.nome_cidade.title(), nome_responsavel=nome_responsavel, data_criacao=datetime.strftime(projeto.created_at,"%d/%m/%Y"), n_equipes=projeto_equipes.count(), n_atletas=projeto_atletas.count(), equipes=equipes, atletas=atletas, can_edit=can_edit)
 
 @app.route('/view/equipe/')
 @login_required
@@ -885,9 +1149,13 @@ def visualizar_equipe():
         status_atleta = status_query.filter(Status.id==atleta.status_id).scalar().nome_status
 
         atletas.append({"id":atleta.id, "nome_atleta":atleta.firstname_atleta.title(), "equipe":equipe.nome_equipe.title(), "modalidade":modalidade_atleta.title(), "posicao":posicao_atleta.title(), "categoria":categoria_atleta.title(), "nivel":nivel_atleta.title(), "status":status_atleta.title()})
-    
 
-    return render_template("visualizar_equipe.html", equipe=dados_equipe, atletas=atletas)
+        if (current_user.is_admin) or (current_user.is_coord and current_user.id==projeto_equipe.responsavel_id):
+            can_edit = True
+    
+    can_edit = ((current_user.is_admin) or (current_user.is_coord and current_user.id==projeto_equipe.responsavel_id) or (current_user.is_tecnico and current_user.id==equipe.tecnico_id))
+
+    return render_template("visualizar_equipe.html", equipe=dados_equipe, atletas=atletas, can_edit=can_edit)
 
 @app.route('/view/atleta/')
 @login_required
@@ -897,65 +1165,78 @@ def visualizar_atleta():
     status_query = db.session.query(Status)
     equipes_query = db.session.query(Equipe)
     projetos_query = db.session.query(Projeto)
-    usuarios_query = db.session.query(Usuario)
 
     atleta = Atleta.query.get_or_404(atleta_id)
-
+    nome_atleta = f"{atleta.firstname_atleta} {atleta.lastname_atleta}"
     equipe_atleta = equipes_query.filter(Equipe.id==atleta.equipe_id).scalar()
-
     projeto_atleta = projetos_query.filter(Projeto.id==equipe_atleta.projeto_id).scalar()
-
     status_atleta = status_query.filter(Status.id==atleta.status_id).scalar()
-
-    historico_atleta = db.session.query(AtletaHistorico).filter(AtletaHistorico.atleta_id==atleta.id).all()
-
     modalidade_atleta = db.session.query(Modalidade.nome_modalidade).filter(Modalidade.id==atleta.modalidade_id).scalar()
     posicao_atleta = db.session.query(Posicao.nome_posicao).filter(Posicao.id==atleta.posicao_id).scalar()
     categoria_atleta = db.session.query(Categoria.nome_categoria).filter(Categoria.id==atleta.categoria_id).scalar()
     nivel_atleta = db.session.query(Nivel.nome_nivel).filter(Nivel.id==atleta.nivel_id).scalar()
     sexo_atleta = db.session.query(Sexo.sexo).filter(Sexo.id==atleta.sexo_id).scalar()
 
-    nome_atleta = f"{atleta.firstname_atleta} {atleta.lastname_atleta}"
+    dados_atleta = {"id":atleta.id, "nome_atleta":nome_atleta.title(), "equipe_id":equipe_atleta.id, "equipe":equipe_atleta.nome_equipe.title(), "projeto": projeto_atleta.nome_projeto.title(), "status":status_atleta.nome_status.title(), "modalidade":modalidade_atleta.title(), "posicao":posicao_atleta.title(), "categoria":categoria_atleta.title(), "nivel":nivel_atleta.title(), "sexo":sexo_atleta.title()}
 
-    #Após feita a função de login, organize a tabela a seguir usando update para que os dados sensíveis não vá para o console web
-    dados_atleta = {"id":atleta.id, "nome_atleta":nome_atleta.title(), "equipe_id":equipe_atleta.id, "equipe":equipe_atleta.nome_equipe.title(), "projeto": projeto_atleta.nome_projeto.title(), "status":status_atleta.nome_status.title(), "modalidade":modalidade_atleta.title(), "posicao":posicao_atleta.title(), "categoria":categoria_atleta.title(), "nivel":nivel_atleta.title(), "sexo":sexo_atleta.title(), "email":atleta.email, "telefone1":format_telefone(atleta.telefone1), "telefone2":format_telefone(atleta.telefone2), "rg":format_rg(atleta.rg), "cpf":format_cpf(atleta.cpf), "data_nascimento":datetime.strftime(atleta.data_nascimento,"%d/%m/%Y")}
+    dados_pessoais_atleta = None
+    dados_endereco = None
 
-    # if pode_ver_dados_pessoais(usuario_logado):
-    # dados_atleta.update({
-    #     "email": atleta.email,
-    #     "telefone1": atleta.telefone1,
-    #     "telefone2": atleta.telefone2,
-    #     "rg": atleta.rg,
-    #     "cpf": atleta.cpf,
-    #     "data_nascimento": atleta.data_nascimento.strftime("%d/%m/%Y")
-    # })
+    # DADOS PRIVADOS
 
-    endereco_atleta = db.session.query(AtletaEndereco).filter(AtletaEndereco.atleta_id==atleta.id).scalar()
+    can_edit = ((current_user.is_admin) or (current_user.is_coord and current_user.id==projeto_atleta.responsavel_id) or (current_user.is_tecnico and current_user.id==equipe_atleta.tecnico_id))
+        
+    if can_edit:
 
-    if endereco_atleta:
+        dados_pessoais_atleta = {
+            "email":atleta.email,
+            "telefone1":format_telefone(atleta.telefone1),
+            "telefone2":format_telefone(atleta.telefone2),
+            "rg":format_rg(atleta.rg),
+            "cpf":format_cpf(atleta.cpf),
+            "data_nascimento":datetime.strftime(atleta.data_nascimento,"%d/%m/%Y")
+        }
 
-        cidade_atleta = db.session.query(Cidade).filter(Cidade.id == endereco_atleta.cidade_id).scalar()
+        endereco_atleta = db.session.query(AtletaEndereco).filter(AtletaEndereco.atleta_id==atleta.id).scalar()
 
-        estado_abr_atleta = db.session.query(Estado.abreviacao).filter(Estado.id == cidade_atleta.estado_id).scalar()
+        if endereco_atleta:
 
-        dados_endereco = {"logradouro":endereco_atleta.logradouro.title(), "numero":endereco_atleta.numero, "complemento": endereco_atleta.complemento.title(), "bairro":endereco_atleta.bairro.title(), "cidade":cidade_atleta.nome_cidade.title(), "estado_abreviacao":estado_abr_atleta.upper(), "cep":format_cep(endereco_atleta.cep)}
-    else:
-        dados_endereco=None
+            cidade_atleta = db.session.query(Cidade).filter(Cidade.id == endereco_atleta.cidade_id).scalar()
+            estado_abr_atleta = db.session.query(Estado.abreviacao).filter(Estado.id == cidade_atleta.estado_id).scalar()
+
+            dados_endereco = {"logradouro":endereco_atleta.logradouro.title(), "numero":endereco_atleta.numero, "complemento": endereco_atleta.complemento.title(), "bairro":endereco_atleta.bairro.title(), "cidade":cidade_atleta.nome_cidade.title(), "estado_abreviacao":estado_abr_atleta.upper(), "cep":format_cep(endereco_atleta.cep)}
+
+    # HISTÓRICO (1 QUERY)
+    
+    historico_rows = (
+        db.session.query(
+            AtletaHistorico,
+            Status.nome_status,
+            Projeto.nome_projeto,
+            Equipe.nome_equipe,
+            Usuario.firstname_usuario
+        )
+        .join(Status, Status.id == AtletaHistorico.status_id)
+        .join(Projeto, Projeto.id == AtletaHistorico.projeto_id)
+        .join(Equipe, Equipe.id == AtletaHistorico.equipe_id)
+        .join(Usuario, Usuario.id == AtletaHistorico.responsavel_id)
+        .filter(AtletaHistorico.atleta_id == atleta.id)
+        .order_by(AtletaHistorico.created_at.desc())
+        .all()
+    )
 
     historico = []
-    for h in historico_atleta:
+    for h, status_nome, projeto_nome, equipe_nome, responsavel_nome in historico_rows:
+        historico.append({
+            "status": status_nome.title(),
+            "motivo": h.motivo,
+            "projeto": projeto_nome.title(),
+            "equipe": equipe_nome.title(),
+            "responsavel": responsavel_nome.title(),
+            "created_at": h.created_at.strftime("%d/%m/%Y %H:%M"),
+        })
 
-        h_status = status_query.filter(Status.id == h.status_id).scalar().nome_status
-
-        h_projeto = projetos_query.filter(Projeto.id==h.projeto_id).scalar().nome_projeto
-
-        h_equipe = equipes_query.filter(Equipe.id==h.equipe_id).scalar().nome_equipe
-
-        h_responsavel = usuarios_query.filter(Usuario.id==h.responsavel_id).scalar()
-
-        historico.append({"status":h_status.title(), "motivo":h.motivo, "projeto":h_projeto.title(), "equipe":h_equipe.title(), "responsavel":h_responsavel.firstname_usuario.title(), "created_at":h.created_at.strftime('%d/%m/%Y %H:%M')})
-
-    return render_template("visualizar_atleta.html", atleta=dados_atleta, endereco=dados_endereco, historico=historico)
+    return render_template("visualizar_atleta.html", atleta=dados_atleta, endereco=dados_endereco, historico=historico, dados_pessoais_atleta= dados_pessoais_atleta, can_edit=can_edit)
 
 if __name__ == '__main__':
     # Cria o banco de dados e as tabelas, se ainda não existirem, dentro do contexto da aplicação

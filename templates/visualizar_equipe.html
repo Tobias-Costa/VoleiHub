@@ -4,19 +4,24 @@
 {% block content %}
 
 <!-- ================= DADOS DA EQUIPE ================= -->
+<div class="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-4">
+    <a href="{{ url_for('visualizar_projeto', projeto_id=equipe.projeto_id) }}" class="btn btn-info text-light">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+
+    {% if can_edit %}
+    <a href="{{ url_for('editar_equipe', equipe_id=equipe.id) }}" class="btn btn-outline-secondary btn-sm">
+        ✏️ Editar Equipe
+    </a>
+    {% endif %}
+</div>
+
 <div class="card shadow-sm mb-4">
     <div class="card-body">
 
         <div class="d-flex justify-content-between flex-wrap">
             <div>
-                <!-- BOTÕES DE AÇÃO -->
-                <!-- Aparece se usuario for coordenador ou admin -->
-                <div class="mb-1">
-                    <a href="{{ url_for('editar_equipe', equipe_id=equipe.id) }}"
-                    class="btn btn-outline-secondary btn-sm">
-                        ✏️ Editar Equipe
-                    </a>
-                </div>
+            
                 <span class="badge {% if equipe.is_active %}bg-success{% else %}bg-secondary{% endif %}">
                     {% if equipe.is_active %}
                         Ativa

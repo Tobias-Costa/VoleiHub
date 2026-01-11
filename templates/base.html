@@ -37,6 +37,21 @@
                         <a class="nav-link text-white" href="{{ url_for('home') }}">Home</a>
                     </li>
                     {% if current_user.is_authenticated %}
+                        {% if current_user.is_admin %}
+                            <li class="nav-item">
+                                <a class="nav-link text-white" href="/admin">Admin</a>
+                            </li>
+                        {% endif %}
+                        {% if current_user.is_admin or current_user.is_coord %}
+                            <li class="nav-item">
+                                <a class="nav-link text-white" href="{{ url_for('coordenador_dashboard') }}">Coordenador</a>
+                            </li>
+                        {% endif %}
+                        {% if current_user.is_admin or current_user.is_tecnico %}
+                            <li class="nav-item">
+                                <a class="nav-link text-white" href="{{ url_for('tecnico_dashboard') }}">Técnico</a>
+                            </li>
+                        {% endif %}
                         <li class="nav-item">
                             <a class="nav-link text-white" href="{{ url_for('logout') }}">Logout</a>
                         </li>

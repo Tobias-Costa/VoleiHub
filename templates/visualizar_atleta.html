@@ -4,11 +4,33 @@
 {% block content %}
 
 <!-- ================= DADOS GERAIS ================= -->
+<div class="d-flex justify-content-start align-items-center flex-wrap gap-2 mb-4">
+    <a href="{{ url_for('visualizar_equipe', equipe_id=atleta.equipe_id) }}" class="btn btn-info text-light">
+       <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+
+    {% if can_edit %}
+    <a href="{{ url_for('editar_atleta', atleta_id=atleta.id) }}"
+    class="btn btn-outline-secondary btn-sm">
+        ✏️ Editar Atleta
+    </a>
+
+    
+    <a href="{{ url_for('editar_endereco_atleta', atleta_id=atleta.id) }}"
+    class="btn btn-outline-secondary btn-sm">
+        ✏️ Editar Endereço
+    </a>
+    {% endif %}
+
+</div>
+
 <div class="card shadow-sm mb-4">
+
     <div class="card-body">
 
         <div class="d-flex justify-content-between flex-wrap">
             <div>
+    
                 <h3 class="fw-bold mb-1">{{ atleta.nome_atleta }}</h3>
                 <p class="mb-1"><strong>Projeto:</strong> {{ atleta.projeto }}</p>
                 <p class="mb-1"><strong>Equipe:</strong> {{ atleta.equipe }}</p>
@@ -31,8 +53,8 @@
 </div>
 
 <!-- ================= DADOS PESSOAIS (RESTRITO) ================= -->
- <!-- if usuario_logado.is_admin or usuario_logado.is_coord or usuario_logado.is_tecnico  -->
 
+{% if dados_pessoais_atleta %}
 <div class="card shadow-sm mb-4">
     <div class="card-header fw-bold">
         Dados Pessoais
@@ -42,28 +64,28 @@
         <div class="row g-3">
 
             <div class="col-12 col-md-6">
-                <strong>Email:</strong> {{ atleta.email }}
+                <strong>Email:</strong> {{ dados_pessoais_atleta.email }}
             </div>
 
             <div class="col-12 col-md-6">
-                <strong>Data de nascimento:</strong> {{ atleta.data_nascimento }}
+                <strong>Data de nascimento:</strong> {{ dados_pessoais_atleta.data_nascimento }}
             </div>
 
             <div class="col-12 col-md-6">
-                <strong>Telefone 1:</strong> {{ atleta.telefone1 }}
+                <strong>Telefone 1:</strong> {{ dados_pessoais_atleta.telefone1 }}
             </div>
 
             <div class="col-12 col-md-6">
-                <strong>Telefone 2:</strong> {{ atleta.telefone2 or '---'}}
+                <strong>Telefone 2:</strong> {{ dados_pessoais_atleta.telefone2 or '---'}}
             </div>
 
             <div class="col-12 col-md-6">
-                <strong>RG:</strong> {{ atleta.rg }}
+                <strong>RG:</strong> {{ dados_pessoais_atleta.rg }}
             </div>
 
 
             <div class="col-12 col-md-6">
-                <strong>CPF:</strong> {{ atleta.cpf }}
+                <strong>CPF:</strong> {{ dados_pessoais_atleta.cpf }}
             </div>
 
 
@@ -113,7 +135,7 @@
 
 </div>
 
-<!-- endif  -->
+{% endif %}
 
 <!-- ================= HISTÓRICO ================= -->
 <div class="card shadow-sm mb-4">
@@ -132,9 +154,9 @@
                     <span>Motivo: {{ h.motivo }}</span>
                 {% endif %}
                 <div class="small text-muted mt-1">
-                    Projeto: {{ h.projeto }} |
-                    Equipe: {{ h.equipe }} |
-                    Responsável: {{ h.responsavel }}
+                    Projeto atual: {{ h.projeto }} |
+                    Equipe atual: {{ h.equipe }} |
+                    Responsável pela alteração: {{ h.responsavel }}
                 </div>
             </div>
 

@@ -2,7 +2,6 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-
 <!-- ================= KPIs ================= -->
 <div class="row g-3 mb-4">
 
@@ -67,6 +66,57 @@
 
 </div>
 
+<!-- ================= TRANSFERÊNCIAS RECENTES ================= -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-bold">
+        Transferências recentes
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Proj.Origem</th>
+                    <th>Eq.Origem</th>
+                    <th><i class="bi bi-arrow-right"></i></th>
+                    <th>Proj.Destino</th>
+                    <th>Eq.Destino</th>
+                    <th>Atleta</th>
+                    <th>Responsável</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for transferencia in transferencias %}
+                <tr>
+                    <td>{{ transferencia.proj_origem }}</td>
+                    <td>{{ transferencia.eq_origem  }}</td>
+                    <td></td>
+                    <td>{{ transferencia.proj_destino }}</td>
+                    <td>{{ transferencia.eq_destino }}</td>
+                    <td>{{ transferencia.nome_atleta }}</td>
+                    <td>{{ transferencia.responsavel }}</td>
+                    <!-- <td class="text-end">
+                        Detalhar transferencia
+                        <a 
+                            href="url_for('home', transferencia_id=atividade.id) " 
+                            class="btn btn-sm btn-outline-primary">
+                            Ver
+                        </a>
+                    </td> -->
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">
+                        Nenhuma atividade encontrada
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <!-- ================= NAVEGAÇÃO RÁPIDA ================= -->
 <div class="row g-3 mb-4">
 
@@ -96,57 +146,6 @@
 
 </div>
 
-<!-- ================= TRANSFERÊNCIAS RECENTES ================= -->
-<div class="card shadow-sm mb-4">
-    <div class="card-header fw-bold">
-        Transferências recentes
-    </div>
-
-    <div class="table-responsive">
-        <table class="table table-hover mb-0 align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th>Proj.Origem</th>
-                    <th>Eq.Origem</th>
-                    <th><i class="bi bi-arrow-right"></i></th>
-                    <th>Proj.Destino</th>
-                    <th>Eq.Destino</th>
-                    <th>Atleta</th>
-                    <th>Responsável</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                {% for transferencia in transferencias %}
-                <tr>
-                    <td>{{ transferencia.proj_origem.title() }}</td>
-                    <td>{{ transferencia.eq_origem.title()  }}</td>
-                    <td></td>
-                    <td>{{ transferencia.proj_destino.title() }}</td>
-                    <td>{{ transferencia.eq_destino.title() }}</td>
-                    <td>{{ transferencia.nome_atleta.title() }}</td>
-                    <td>{{ transferencia.responsavel.title() }}</td>
-                    <!-- <td class="text-end">
-                        Detalhar transferencia
-                        <a 
-                            href="url_for('home', transferencia_id=atividade.id) " 
-                            class="btn btn-sm btn-outline-primary">
-                            Ver
-                        </a>
-                    </td> -->
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="7" class="text-center text-muted">
-                        Nenhuma atividade encontrada
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-
 <!-- ================= LISTA DE PROJETOS ================= -->
 <div class="card shadow-sm mb-4">
     <div class="card-header fw-bold">
@@ -172,7 +171,7 @@
                     <option value="">Todos</option>
                     {% for cidade in cidades %}
                         <option value="{{cidade.id}}" {{ 'selected' if request.args.get('cidade') == cidade.id|string }}>
-                            {{ cidade.nome_cidade.title() }}
+                            {{ cidade.nome_cidade }}
                         </option>
                     {% endfor %}
                 </select>
@@ -215,8 +214,8 @@
                 <tbody>
                     {% for projeto in projetos %}
                     <tr>
-                        <td>{{ projeto.nome.title() }}</td>
-                        <td>{{ projeto.cidade.title() }}</td>
+                        <td>{{ projeto.nome }}</td>
+                        <td>{{ projeto.cidade }}</td>
                         <td>{{ projeto.n_equipes }}</td>
                         <td>{{ projeto.n_atletas }}</td>
                         <td>

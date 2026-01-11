@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Editar Endereço do Atleta{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <h3 class="fw-bold mb-2">Editar Endereço</h3>
+    <p class="text-muted mb-4">
+        Atleta: <strong>{{ atleta.firstname_atleta }} {{ atleta.lastname_atleta }}</strong>
+    </p>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <form method="POST">
+                {{ form.csrf_token }}
+
+                <div class="row g-3">
+
+                    <div class="col-md-8">
+                        {{ form.logradouro.label(class="form-label") }}
+                        {{ form.logradouro(class="form-control") }}
+                        {% for error in form.logradouro.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-4">
+                        {{ form.numero.label(class="form-label") }}
+                        {{ form.numero(class="form-control") }}
+                        {% for error in form.numero.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        {{ form.complemento.label(class="form-label") }}
+                        {{ form.complemento(class="form-control") }}
+                    </div>
+
+                    <div class="col-md-6">
+                        {{ form.bairro.label(class="form-label") }}
+                        {{ form.bairro(class="form-control") }}
+                        {% for error in form.bairro.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        {{ form.cidade_id.label(class="form-label") }}
+                        {{ form.cidade_id(class="form-select") }}
+                        {% for error in form.cidade_id.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-6">
+                        {{ form.cep.label(class="form-label") }}
+                        {{ form.cep(class="form-control") }}
+                        {% for error in form.cep.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{{ url_for('visualizar_atleta', atleta_id=atleta.id) }}" class="btn btn-secondary">
+                        Voltar
+                    </a>
+
+                    <button type="submit" class="btn btn-primary">
+                        Atualizar Endereço
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}

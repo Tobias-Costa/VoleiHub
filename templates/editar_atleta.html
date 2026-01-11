@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Criar Atleta{% endblock %}
+{% block title %}Editar Atleta{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -14,7 +14,7 @@
         {% endif %}
     {% endwith %}
 
-    <h3 class="fw-bold mb-4">Cadastrar Novo Atleta</h3>
+    <h3 class="fw-bold mb-4">Editar Atleta</h3>
 
     <form method="POST">
         {{ form.csrf_token }}
@@ -162,11 +162,11 @@
                 </div>
 
                 <div class="d-flex justify-content-between">
-                    <a href="{{ url_for('home') }}" class="btn btn-secondary">
-                        Cancelar
+                    <a href="{{ url_for('visualizar_atleta', atleta_id=atleta.id) }}" class="btn btn-secondary">
+                        Voltar
                     </a>
                     <button class="btn btn-primary">
-                        Cadastrar Atleta
+                        Atualizar Atleta
                     </button>
                 </div>
 
