@@ -1511,4 +1511,4 @@ if __name__ == '__main__':
     # Cria o banco de dados e as tabelas, se ainda não existirem, dentro do contexto da aplicação
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    app.run()
