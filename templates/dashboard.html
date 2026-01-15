@@ -96,14 +96,6 @@
                     <td>{{ transferencia.eq_destino }}</td>
                     <td>{{ transferencia.nome_atleta }}</td>
                     <td>{{ transferencia.responsavel }}</td>
-                    <!-- <td class="text-end">
-                        Detalhar transferencia
-                        <a 
-                            href="url_for('home', transferencia_id=atividade.id) " 
-                            class="btn btn-sm btn-outline-primary">
-                            Ver
-                        </a>
-                    </td> -->
                 </tr>
                 {% else %}
                 <tr>
@@ -115,35 +107,6 @@
             </tbody>
         </table>
     </div>
-</div>
-
-<!-- ================= NAVEGAÇÃO RÁPIDA ================= -->
-<div class="row g-3 mb-4">
-
-    <div class="col-12 col-md-4">
-        <a href="{{ url_for('criar_projeto') }}" class="card shadow-sm text-center text-decoration-none">
-            <div class="card-body">
-                <h5>➕ Novo Projeto</h5>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-12 col-md-4">
-        <a href="{{ url_for('criar_equipe') }}" class="card shadow-sm text-center text-decoration-none">
-            <div class="card-body">
-                <h5>➕ Nova Equipe</h5>
-            </div>
-        </a>
-    </div>
-
-    <div class="col-12 col-md-4">
-        <a href="{{ url_for('criar_atleta') }}" class="card shadow-sm text-center text-decoration-none">
-            <div class="card-body">
-                <h5>➕ Novo Atleta</h5>
-            </div>
-        </a>
-    </div>
-
 </div>
 
 <!-- ================= LISTA DE PROJETOS ================= -->

@@ -326,6 +326,7 @@ def home():
     projetos_query = db.session.query(Projeto)
     equipes_query = db.session.query(Equipe)
     atletas_query = db.session.query(Atleta)
+    usuarios_query = db.session.query(Usuario)
     cidades_query = db.session.query(Cidade)
     id_status_query = db.session.query(Status.id)
 
@@ -344,22 +345,52 @@ def home():
     atletas_suspensos = atletas_query.filter_by(status_id=id_status_suspenso).count()
 
     # Atividades recentes(transferências)
+    # Queries base (fora do loop)
+    transferencias_db = (
+        db.session.query(Transferencia)
+        .order_by(Transferencia.id.desc())
+        .limit(5)
+        .all()
+    )
+
+    # Montagem da lista
     transferencias = []
-    for transferencia in db.session.query(Transferencia).order_by(Transferencia.id.desc()).limit(5).all():
 
-        proj_origem = db.session.query(Projeto.nome_projeto).filter_by(id=transferencia.projeto_origem_id).scalar()
+    for transferencia in transferencias_db:
 
-        eq_origem = db.session.query(Equipe.nome_equipe).filter_by(id=transferencia.equipe_origem_id).scalar()
+        proj_origem = projetos_query.filter_by(
+            id=transferencia.projeto_origem_id
+        ).scalar()
 
-        proj_destino = db.session.query(Projeto.nome_projeto).filter_by(id=transferencia.projeto_destino_id).scalar()
+        eq_origem = equipes_query.filter_by(
+            id=transferencia.equipe_origem_id
+        ).scalar()
 
-        eq_destino = db.session.query(Equipe.nome_equipe).filter_by(id=transferencia.equipe_destino_id).scalar()
+        proj_destino = projetos_query.filter_by(
+            id=transferencia.projeto_destino_id
+        ).scalar()
 
-        atleta = db.session.query(Atleta.firstname_atleta).filter_by(id=transferencia.atleta_id).scalar()
+        eq_destino = equipes_query.filter_by(
+            id=transferencia.equipe_destino_id
+        ).scalar()
 
-        responsavel = db.session.query(Usuario.firstname_usuario).filter_by(id=transferencia.responsavel_id).scalar()
+        atleta = atletas_query.filter_by(
+            id=transferencia.atleta_id
+        ).scalar()
 
-        transferencias.append({"id":transferencia.id, "proj_origem":proj_origem.title(), "eq_origem":eq_origem.title(), "proj_destino":proj_destino.title(), "eq_destino":eq_destino.title(), "nome_atleta":atleta.title(), "responsavel":responsavel.title()})
+        responsavel = usuarios_query.filter_by(
+            id=transferencia.responsavel_id
+        ).scalar()
+
+        transferencias.append({
+            "id": transferencia.id,
+            "proj_origem": proj_origem.nome_projeto.title(),
+            "eq_origem": eq_origem.nome_equipe.title(),
+            "proj_destino": proj_destino.nome_projeto.title(),
+            "eq_destino": eq_destino.nome_equipe.title(),
+            "nome_atleta": atleta.firstname_atleta.title(),
+            "responsavel": responsavel.firstname_usuario.title(),
+        })
 
     # Tabela projetos
 
@@ -401,12 +432,250 @@ def home():
 @app.route('/coordenador/dashboard/')
 @login_required
 def coordenador_dashboard():
-    pass
+    #Verifica se tem acesso(admin ou coordenador)
+    if not (current_user.is_admin or current_user.is_coord):
+        abort(403)
+
+    # Coloque aqui querys gerais para otimizar o app reduzindo queries
+    # Projetos onde o usuário é coordenador
+    projetos_query = db.session.query(Projeto).filter(
+        Projeto.responsavel_id == current_user.id
+    )
+
+    # Equipes vinculadas aos projetos do coordenador
+    equipes_query = db.session.query(Equipe).join(Projeto).filter(
+        Projeto.responsavel_id == current_user.id
+    )
+
+    # Atletas vinculados às equipes dos projetos do coordenador
+    atletas_query = db.session.query(Atleta) \
+        .join(Equipe) \
+        .join(Projeto) \
+        .filter(Projeto.responsavel_id == current_user.id)
+
+    cidades_query = db.session.query(Cidade)
+    id_status_query = db.session.query(Status.id)
+
+    # Painel dashboard
+    total_equipes_ativas = equipes_query.filter(
+        Equipe.is_active == True
+    ).count()
+
+    total_atletas = atletas_query.count()
+
+    # Status dos atletas
+    id_status_ativo = id_status_query.filter_by(nome_status="ATIVO").scalar()
+    id_status_lesionado = id_status_query.filter_by(nome_status="LESIONADO").scalar()
+    id_status_suspenso = id_status_query.filter_by(nome_status="SUSPENSO").scalar()
+
+    atletas_ativos = atletas_query.filter(
+        Atleta.status_id == id_status_ativo
+    ).count()
+
+    atletas_lesionados = atletas_query.filter(
+        Atleta.status_id == id_status_lesionado
+    ).count()
+
+    atletas_suspensos = atletas_query.filter(
+        Atleta.status_id == id_status_suspenso
+    ).count()
+
+    dashboard_dict = {"n_equipes_ativas":total_equipes_ativas, "n_atletas":total_atletas, "atletas_ativos":atletas_ativos, "atletas_lesionados":atletas_lesionados, "atletas_suspensos":atletas_suspensos}
+
+    # Atividades recentes(transferências)
+    transferencias_db = (
+        db.session.query(Transferencia)
+        .join(Projeto, or_(
+            Projeto.id == Transferencia.projeto_origem_id,
+            Projeto.id == Transferencia.projeto_destino_id
+        ))
+        .filter(Projeto.responsavel_id == current_user.id)
+        .distinct()
+        .order_by(Transferencia.id.desc())
+        .limit(5)
+        .all()
+    )
+
+    # Montagem da lista
+    transferencias = []
+
+    for transferencia in transferencias_db:
+
+        proj_origem = db.session.query(Projeto).filter(Projeto.id == transferencia.projeto_origem_id).first()
+
+        proj_destino = db.session.query(Projeto).filter(Projeto.id == transferencia.projeto_destino_id).first()
+
+        eq_origem = db.session.query(Equipe).filter(Equipe.id == transferencia.equipe_origem_id).first()
+
+        eq_destino = db.session.query(Equipe).filter(Equipe.id == transferencia.equipe_destino_id).first()
+
+        atleta = db.session.query(Atleta).filter(Atleta.id == transferencia.atleta_id).first()
+
+        responsavel = db.session.query(Usuario).filter(Usuario.id == transferencia.responsavel_id).first()
+
+        transferencias.append({
+            "id": transferencia.id,
+            "proj_origem": proj_origem.nome_projeto.title(),
+            "eq_origem": eq_origem.nome_equipe.title(),
+            "proj_destino": proj_destino.nome_projeto.title(),
+            "eq_destino": eq_destino.nome_equipe.title(),
+            "nome_atleta": atleta.firstname_atleta.title(),
+            "responsavel": responsavel.firstname_usuario.title(),
+        })
+
+    # Tabela Projetos
+    ## Lógica para o funcionamento do filtro de projetos
+    q = request.args.get("q", "").strip()
+    status = request.args.get("status")
+    cidade_id = request.args.get("cidade")
+
+    ### Cria cópia de projetos_query com apenas os projetos do coordenador
+    # filtro_query = projetos_query.filter(Projeto.responsavel_id==current_user.id)
+    filtro_query = projetos_query
+
+    if q:
+        filtro_query = filtro_query.filter(Projeto.nome_projeto.ilike(f"%{q}%"))
+
+    if status == "ativo":
+        filtro_query = filtro_query.filter(Projeto.is_active == True)
+    elif status == "inativo":
+        filtro_query = filtro_query.filter(Projeto.is_active == False)
+
+    if cidade_id:
+        filtro_query = filtro_query.filter(Projeto.cidade_id == cidade_id)
+
+    lista_projetos = filtro_query.all()
+
+    projetos = []
+    for projeto in lista_projetos:
+        projeto_cidade = cidades_query.filter_by(id=projeto.cidade_id).scalar().nome_cidade
+        
+        projeto_equipes = equipes_query.filter(Equipe.projeto_id==projeto.id).count()
+
+        projeto_atletas = atletas_query.filter(Equipe.projeto_id == projeto.id).count()
+
+        projetos.append({"id":projeto.id, "nome":projeto.nome_projeto.title(), "cidade":projeto_cidade.title(), "n_equipes":projeto_equipes, "n_atletas":projeto_atletas, "is_active":bool(projeto.is_active)})
+
+    cidades = [{"id":c.id, "nome_cidade":c.nome_cidade.title()} for c in cidades_query.all()]
+
+    return render_template("painel_coordenador.html", dashboard=dashboard_dict, transferencias=transferencias, cidades=cidades, projetos=projetos)
 
 @app.route('/tecnico/dashboard/')
 @login_required
 def tecnico_dashboard():
-    pass
+    #Verifica se tem acesso(admin, coordenador ou tecnico)
+    if not(current_user.is_admin or current_user.is_tecnico):
+        abort(403)
+
+    # Coloque aqui querys gerais para otimizar o app reduzindo queries
+    # Equipes do técnico logado
+    # equipes_query = db.session.query(Equipe).filter(
+    #     Equipe.tecnico_id == current_user.id
+    # )
+
+    # Atletas vinculados às equipes do técnico
+    atletas_query = db.session.query(Atleta) \
+        .join(Equipe) \
+        .filter(Equipe.tecnico_id == current_user.id)
+
+    # Total de atletas do técnico (somatório de todas as equipes)
+    total_atletas = atletas_query.count()
+
+    id_status_query = db.session.query(Status.id)
+
+    # Status dos atletas
+    id_status_ativo = id_status_query.filter_by(nome_status="ATIVO").scalar()
+    id_status_lesionado = id_status_query.filter_by(nome_status="LESIONADO").scalar()
+    id_status_suspenso = id_status_query.filter_by(nome_status="SUSPENSO").scalar()
+
+    atletas_ativos = atletas_query.filter(
+        Atleta.status_id == id_status_ativo
+    ).count()
+
+    atletas_lesionados = atletas_query.filter(
+        Atleta.status_id == id_status_lesionado
+    ).count()
+
+    atletas_suspensos = atletas_query.filter(
+        Atleta.status_id == id_status_suspenso
+    ).count()
+
+    dashboard_dict = {"n_atletas":total_atletas, "atletas_ativos":atletas_ativos, "atletas_lesionados":atletas_lesionados, "atletas_suspensos":atletas_suspensos}
+
+    # Atividades recentes(transferências)
+    # Transferências envolvendo equipes do técnico
+    transferencias_db = (
+        db.session.query(Transferencia)
+        .join(
+            Equipe,
+            or_(
+                Equipe.id == Transferencia.equipe_origem_id,
+                Equipe.id == Transferencia.equipe_destino_id
+            )
+        )
+        .filter(Equipe.tecnico_id == current_user.id)
+        .distinct()
+        .order_by(Transferencia.id.desc())
+        .limit(5)
+        .all()
+    )
+
+    # Montagem da lista
+    transferencias = []
+
+    for transferencia in transferencias_db:
+
+        proj_origem = db.session.query(Projeto).filter(Projeto.id == transferencia.projeto_origem_id).first()
+
+        proj_destino = db.session.query(Projeto).filter(Projeto.id == transferencia.projeto_destino_id).first()
+
+        eq_origem = db.session.query(Equipe).filter(Equipe.id == transferencia.equipe_origem_id).first()
+
+        eq_destino = db.session.query(Equipe).filter(Equipe.id == transferencia.equipe_destino_id).first()
+
+        atleta = db.session.query(Atleta).filter(Atleta.id == transferencia.atleta_id).first()
+
+        responsavel = db.session.query(Usuario).filter(Usuario.id == transferencia.responsavel_id).first()
+
+        transferencias.append({
+            "id": transferencia.id,
+            "proj_origem": proj_origem.nome_projeto.title(),
+            "eq_origem": eq_origem.nome_equipe.title(),
+            "proj_destino": proj_destino.nome_projeto.title(),
+            "eq_destino": eq_destino.nome_equipe.title(),
+            "nome_atleta": atleta.firstname_atleta.title(),
+            "responsavel": responsavel.firstname_usuario.title(),
+        })
+
+    # Tabela Equipe
+    ## Lógica para o funcionamento do filtro de Equipes
+    q = request.args.get("q", "").strip()
+    status = request.args.get("status")
+
+    ### Cria cópia de equipes_query com apenas as equipes do técnico
+    filtro_query = (
+        db.session.query(Equipe, Projeto)
+        .join(Projeto, Projeto.id == Equipe.projeto_id)
+        .filter(Equipe.tecnico_id == current_user.id)
+    )
+
+    if q:
+        filtro_query = filtro_query.filter(or_(Equipe.nome_equipe.ilike(f"%{q}%"), Projeto.nome_projeto.ilike(f"%{q}%")))
+
+    if status == "ativo":
+        filtro_query = filtro_query.filter(Equipe.is_active == True)
+    elif status == "inativo":
+        filtro_query = filtro_query.filter(Equipe.is_active == False)
+
+    lista_equipes = filtro_query.all()
+
+    equipes = []
+    for equipe, projeto in lista_equipes:
+        total_atletas = atletas_query.filter(Atleta.equipe_id == equipe.id).count()
+
+        equipes.append({"id":equipe.id, "nome_equipe":equipe.nome_equipe.title(),"nome_projeto":projeto.nome_projeto.title(), "is_active":bool(equipe.is_active),"total_atletas":total_atletas})
+
+    return render_template("painel_tecnico.html", dashboard=dashboard_dict, transferencias=transferencias, equipes=equipes)
 
 @app.route('/criar/projeto/', methods=["GET","POST"])
 @login_required
