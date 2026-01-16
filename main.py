@@ -425,7 +425,7 @@ def home():
     ## Lógica para o funcionamento do filtro de projetos
     q = request.args.get("q", "").strip()
     status = request.args.get("status")
-    cidade_id = request.args.get("cidade")
+    cidade_id = request.args.get("cidade", type=int)
 
     ### Cria cópia de projetos_query
     filtro_query = projetos_query
@@ -555,7 +555,7 @@ def coordenador_dashboard():
     ## Lógica para o funcionamento do filtro de projetos
     q = request.args.get("q", "").strip()
     status = request.args.get("status")
-    cidade_id = request.args.get("cidade")
+    cidade_id = request.args.get("cidade", type=int)
 
     ### Cria cópia de projetos_query com apenas os projetos do coordenador
     # filtro_query = projetos_query.filter(Projeto.responsavel_id==current_user.id)
