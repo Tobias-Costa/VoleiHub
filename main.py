@@ -1535,9 +1535,10 @@ def visualizar_atleta():
 
     return render_template("visualizar_atleta.html", atleta=dados_atleta, endereco=dados_endereco, historico=historico, dados_pessoais_atleta= dados_pessoais_atleta, can_edit=can_edit)
 
-if __name__ == '__main__':
-    # Cria o banco de dados e as tabelas, se ainda não existirem, dentro do contexto da aplicação
-    with app.app_context():
-        db.create_all()
-        create_initial_admin()
-    app.run()
+# Cria o banco de dados e as tabelas, se ainda não existirem, dentro do contexto da aplicação
+with app.app_context():
+    db.create_all() # Excluir após sistema estável
+    create_initial_admin()
+
+# if __name__ == '__main__':
+#     app.run(debug=True)
