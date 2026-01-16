@@ -99,7 +99,7 @@ def create_initial_admin():
 
 @lm.user_loader
 def user_loader(id):
-    usuario = db.session.query(Usuario).filter_by(id=id).first()
+    usuario = db.session.query(Usuario).filter_by(id=int(id)).first()
     return usuario
 
 # --- Classes de formulários ---
@@ -764,7 +764,7 @@ def criar_projeto():
 @app.route('/editar/projeto/', methods=["GET","POST"])
 @login_required
 def editar_projeto():
-    projeto_id = request.args.get("projeto_id")
+    projeto_id = request.args.get("projeto_id", type=int)
 
     #Verifica se tem acesso(admin ou coordenador do projeto)
     projeto_query = db.session.query(Projeto).filter(Projeto.id==projeto_id)
@@ -879,7 +879,7 @@ def criar_equipe():
 @app.route('/editar/equipe/', methods=["GET","POST"])
 @login_required
 def editar_equipe():
-    equipe_id = request.args.get('equipe_id')
+    equipe_id = request.args.get('equipe_id', type=int)
 
     #Verifica se tem acesso(admin ou coordenador do projeto)
 
@@ -1043,7 +1043,7 @@ def criar_atleta():
 @app.route('/editar/atleta/', methods=["GET","POST"])
 @login_required
 def editar_atleta():
-    atleta_id = request.args.get("atleta_id")
+    atleta_id = request.args.get("atleta_id", type=int)
 
     #Verifica se tem acesso(admin ou coordenador do projeto ou tecnico da equipe)
     
@@ -1199,7 +1199,7 @@ def editar_atleta():
 @app.route("/criar/endereco/atleta/", methods=["GET", "POST"])
 @login_required
 def criar_endereco_atleta():
-    atleta_id = request.args.get("atleta_id")
+    atleta_id = request.args.get("atleta_id", type=int)
 
     atleta_endereco_query = (
         db.session.query(Atleta)
@@ -1275,7 +1275,7 @@ def criar_endereco_atleta():
 @app.route("/editar/endereco/atleta/", methods=["GET", "POST"])
 @login_required
 def editar_endereco_atleta():
-    atleta_id = request.args.get("atleta_id")
+    atleta_id = request.args.get("atleta_id", type=int)
     atleta = Atleta.query.get_or_404(atleta_id)
 
     endereco_existe = (
@@ -1360,7 +1360,7 @@ def editar_endereco_atleta():
 @app.route('/view/projeto/')
 @login_required
 def visualizar_projeto():
-    projeto_id = request.args.get('projeto_id')
+    projeto_id = request.args.get('projeto_id', type=int)
 
     # Querys principais para a rota
     projeto = db.session.query(Projeto).filter(Projeto.id == projeto_id).scalar()
@@ -1457,7 +1457,7 @@ def visualizar_equipe():
 @app.route('/view/atleta/')
 @login_required
 def visualizar_atleta():
-    atleta_id = request.args.get('atleta_id')
+    atleta_id = request.args.get('atleta_id', type=int)
 
     status_query = db.session.query(Status)
     equipes_query = db.session.query(Equipe)
