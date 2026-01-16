@@ -50,7 +50,7 @@ def format_cep(cep):
     
     return cep
 
-def hash(txt):
+def hash_password(txt):
     hash_obj = hashlib.sha256(txt.encode('utf-8'))
     return hash_obj.hexdigest()
 
@@ -84,7 +84,7 @@ def create_initial_admin():
         firstname_usuario="ADMIN",
         lastname_usuario="USER",
         email=admin_email,
-        password=hash(admin_password),
+        password=hash_password(admin_password),
         telefone1="00000000000",
         telefone2=None,
         is_admin=True,
@@ -310,7 +310,7 @@ def cadastro_usuario():
             firstname_usuario = form.firstname_usuario.data.upper(),
             lastname_usuario = form.lastname_usuario.data.upper(),
             email = form.email.data,
-            password = hash(form.password.data),
+            password = hash_password(form.password.data),
             telefone1 = somente_digitos(form.telefone1.data),
             telefone2 = somente_digitos(form.telefone2.data),
             )
@@ -332,7 +332,7 @@ def login():
     if form.validate_on_submit():
         email = form.email.data
         password = form.password.data
-        user = db.session.query(Usuario).filter_by(email=email, password=hash(password)).first()
+        user = db.session.query(Usuario).filter_by(email=email, password=hash_password(password)).first()
         if user:
             login_user(user)
             return redirect(url_for('home'))
@@ -1537,8 +1537,10 @@ def visualizar_atleta():
 
 # Cria o banco de dados e as tabelas, se ainda não existirem, dentro do contexto da aplicação
 with app.app_context():
-    db.create_all() # Excluir após sistema estável
     create_initial_admin()
 
 # if __name__ == '__main__':
+    # with app.app_context():
+    #     db.create_all() # Excluir após sistema estável
+    #     create_initial_admin()
 #     app.run(debug=True)
