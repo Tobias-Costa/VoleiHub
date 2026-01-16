@@ -43,7 +43,7 @@ class Usuario(UserMixin, db.Model):
     last_edited = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now) 
     
     def __repr__(self):
-        return f'<Usuario {self.nome_usuario} ({self.email})>'
+        return f'<Usuario {self.firstname_usuario} ({self.email})>'
 
 class Estado(db.Model):
     __tablename__ = 'estados' 
@@ -172,7 +172,7 @@ class Atleta(db.Model):
     last_edited = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now) 
      
     def __repr__(self):
-        return f'<Atleta {self.nome_atleta} (EquipeID:{self.equipe_id} - StatusID:{self.status_id})>'
+        return f'<Atleta {self.firstname_atleta} (EquipeID:{self.equipe_id} - StatusID:{self.status_id})>'
     
 class AtletaEndereco(db.Model):
     __tablename__ = 'enderecos'
