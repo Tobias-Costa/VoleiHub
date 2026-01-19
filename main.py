@@ -412,10 +412,10 @@ def home():
 
         transferencias.append({
             "id": transferencia.id,
-            "proj_origem": proj_origem.nome_projeto.title(),
-            "eq_origem": eq_origem.nome_equipe.title(),
-            "proj_destino": proj_destino.nome_projeto.title(),
-            "eq_destino": eq_destino.nome_equipe.title(),
+            "proj_origem": proj_origem.nome_projeto,
+            "eq_origem": eq_origem.nome_equipe,
+            "proj_destino": proj_destino.nome_projeto,
+            "eq_destino": eq_destino.nome_equipe,
             "nome_atleta": atleta.firstname_atleta.title(),
             "responsavel": responsavel.firstname_usuario.title(),
         })
@@ -451,7 +451,7 @@ def home():
 
         projeto_atletas = atletas_query.join(Equipe, Equipe.id == Atleta.equipe_id).filter(Equipe.projeto_id == projeto.id).count()
 
-        projetos.append({"id":projeto.id, "nome":projeto.nome_projeto.title(), "cidade":projeto_cidade.title(), "n_equipes":projeto_equipes, "n_atletas":projeto_atletas, "is_active":bool(projeto.is_active)})
+        projetos.append({"id":projeto.id, "nome":projeto.nome_projeto, "cidade":projeto_cidade.title(), "n_equipes":projeto_equipes, "n_atletas":projeto_atletas, "is_active":bool(projeto.is_active)})
 
     cidades = [{"id":c.id, "nome_cidade":c.nome_cidade.title()} for c in cidades_query.all()]
 
@@ -543,10 +543,10 @@ def coordenador_dashboard():
 
         transferencias.append({
             "id": transferencia.id,
-            "proj_origem": proj_origem.nome_projeto.title(),
-            "eq_origem": eq_origem.nome_equipe.title(),
-            "proj_destino": proj_destino.nome_projeto.title(),
-            "eq_destino": eq_destino.nome_equipe.title(),
+            "proj_origem": proj_origem.nome_projeto,
+            "eq_origem": eq_origem.nome_equipe,
+            "proj_destino": proj_destino.nome_projeto,
+            "eq_destino": eq_destino.nome_equipe,
             "nome_atleta": atleta.firstname_atleta.title(),
             "responsavel": responsavel.firstname_usuario.title(),
         })
@@ -582,7 +582,7 @@ def coordenador_dashboard():
 
         projeto_atletas = atletas_query.filter(Equipe.projeto_id == projeto.id).count()
 
-        projetos.append({"id":projeto.id, "nome":projeto.nome_projeto.title(), "cidade":projeto_cidade.title(), "n_equipes":projeto_equipes, "n_atletas":projeto_atletas, "is_active":bool(projeto.is_active)})
+        projetos.append({"id":projeto.id, "nome":projeto.nome_projeto, "cidade":projeto_cidade.title(), "n_equipes":projeto_equipes, "n_atletas":projeto_atletas, "is_active":bool(projeto.is_active)})
 
     cidades = [{"id":c.id, "nome_cidade":c.nome_cidade.title()} for c in cidades_query.all()]
 
@@ -667,10 +667,10 @@ def tecnico_dashboard():
 
         transferencias.append({
             "id": transferencia.id,
-            "proj_origem": proj_origem.nome_projeto.title(),
-            "eq_origem": eq_origem.nome_equipe.title(),
-            "proj_destino": proj_destino.nome_projeto.title(),
-            "eq_destino": eq_destino.nome_equipe.title(),
+            "proj_origem": proj_origem.nome_projeto,
+            "eq_origem": eq_origem.nome_equipe,
+            "proj_destino": proj_destino.nome_projeto,
+            "eq_destino": eq_destino.nome_equipe,
             "nome_atleta": atleta.firstname_atleta.title(),
             "responsavel": responsavel.firstname_usuario.title(),
         })
@@ -701,7 +701,7 @@ def tecnico_dashboard():
     for equipe, projeto in lista_equipes:
         total_atletas = atletas_query.filter(Atleta.equipe_id == equipe.id).count()
 
-        equipes.append({"id":equipe.id, "nome_equipe":equipe.nome_equipe.title(),"nome_projeto":projeto.nome_projeto.title(), "is_active":bool(equipe.is_active),"total_atletas":total_atletas})
+        equipes.append({"id":equipe.id, "nome_equipe":equipe.nome_equipe,"nome_projeto":projeto.nome_projeto, "is_active":bool(equipe.is_active),"total_atletas":total_atletas})
 
     return render_template("painel_tecnico.html", dashboard=dashboard_dict, transferencias=transferencias, equipes=equipes)
 
@@ -746,7 +746,7 @@ def criar_projeto():
 
         try:
             novo_projeto = Projeto(
-                nome_projeto=form.nome_projeto.data.upper(),
+                nome_projeto=form.nome_projeto.data,
                 descricao=form.descricao.data,
                 cidade_id=form.cidade_id.data,
                 responsavel_id=form.responsavel_id.data
@@ -808,7 +808,7 @@ def editar_projeto():
 
     if form.validate_on_submit():
         try:
-            projeto.nome_projeto = form.nome_projeto.data.upper()
+            projeto.nome_projeto = form.nome_projeto.data
             projeto.descricao = form.descricao.data
             projeto.is_active = form.is_active.data
             projeto.cidade_id = form.cidade_id.data
@@ -841,7 +841,7 @@ def criar_equipe():
 
     projetos = projetos_query.all()
 
-    form.projeto_id.choices = [(p.id, p.nome_projeto.title()) for p in projetos]
+    form.projeto_id.choices = [(p.id, p.nome_projeto) for p in projetos]
 
     # Popula técnicos(Todos que são técnicos + usuário)
     tecnicos = Usuario.query.filter(Usuario.is_tecnico == True).all()
@@ -860,7 +860,7 @@ def criar_equipe():
 
     if form.validate_on_submit():
         nova_equipe = Equipe(
-            nome_equipe=form.nome_equipe.data.upper(),
+            nome_equipe=form.nome_equipe.data,
             projeto_id=form.projeto_id.data,
             tecnico_id=form.tecnico_id.data,
         )
@@ -912,7 +912,7 @@ def editar_equipe():
 
     projetos = projetos_query.all()
 
-    form.projeto_id.choices = [(p.id, p.nome_projeto.title()) for p in projetos]
+    form.projeto_id.choices = [(p.id, p.nome_projeto) for p in projetos]
 
     # Popula técnicos(Todos que são técnicos + usuário)
     tecnicos = Usuario.query.filter(Usuario.is_tecnico == True).all()
@@ -931,7 +931,7 @@ def editar_equipe():
 
     if form.validate_on_submit():
         try:
-            equipe.nome_equipe = form.nome_equipe.data.upper()
+            equipe.nome_equipe = form.nome_equipe.data
             equipe.projeto_id = form.projeto_id.data
             equipe.tecnico_id = form.tecnico_id.data
             equipe.is_active = form.is_active.data
@@ -974,7 +974,7 @@ def criar_atleta():
         )
 
     form.equipe_id.choices = [
-        (equipe_id, f"{nome_equipe.title()} - {nome_projeto.title()}")
+        (equipe_id, f"{nome_equipe} - {nome_projeto}")
         for equipe_id, nome_equipe, nome_projeto in equipe_query.all()
     ]
 
@@ -1099,7 +1099,7 @@ def editar_atleta():
         )
 
     form.equipe_id.choices = [
-        (equipe_id, f"{nome_equipe.title()} - {nome_projeto.title()}")
+        (equipe_id, f"{nome_equipe} - {nome_projeto}")
         for equipe_id, nome_equipe, nome_projeto in equipe_query.all()
     ]
 
@@ -1364,7 +1364,7 @@ def visualizar_projeto():
 
     # Querys principais para a rota
     projeto = db.session.query(Projeto).filter(Projeto.id == projeto_id).scalar()
-    dados_projeto = {"id":projeto.id, "nome_projeto":projeto.nome_projeto.title(), "descricao":projeto.descricao, "is_active":bool(projeto.is_active)}
+    dados_projeto = {"id":projeto.id, "nome_projeto":projeto.nome_projeto, "descricao":projeto.descricao, "is_active":bool(projeto.is_active)}
 
     projeto_equipes = db.session.query(Equipe).filter_by(projeto_id=projeto.id)
     projeto_atletas = db.session.query(Atleta).join(Equipe, Equipe.id == Atleta.equipe_id).filter(Equipe.projeto_id == projeto.id)
@@ -1386,7 +1386,7 @@ def visualizar_projeto():
         tecnico_equipe = usuarios_query.filter(Usuario.id == equipe.tecnico_id).scalar()
         total_atletas = projeto_atletas.filter(Atleta.equipe_id == equipe.id).count()
 
-        equipes.append({"id":equipe.id, "nome_equipe":equipe.nome_equipe.title(),"tecnico":tecnico_equipe.firstname_usuario.title(), "is_active":bool(equipe.is_active),"total_atletas":total_atletas})
+        equipes.append({"id":equipe.id, "nome_equipe":equipe.nome_equipe,"tecnico":tecnico_equipe.firstname_usuario.title(), "is_active":bool(equipe.is_active),"total_atletas":total_atletas})
 
     #Dicionário tabela atletas-equipe
     atletas = []
@@ -1403,7 +1403,7 @@ def visualizar_projeto():
 
         status_atleta = status_query.filter(Status.id==atleta.status_id).scalar().nome_status
 
-        atletas.append({"id":atleta.id, "nome_atleta":atleta.firstname_atleta.title(), "equipe":equipe_atleta.nome_equipe.title(), "modalidade":modalidade_atleta.title(), "posicao":posicao_atleta.title(), "categoria":categoria_atleta.title(), "nivel":nivel_atleta.title(), "status":status_atleta.title()})
+        atletas.append({"id":atleta.id, "nome_atleta":atleta.firstname_atleta.title(), "equipe":equipe_atleta.nome_equipe, "modalidade":modalidade_atleta.title(), "posicao":posicao_atleta.title(), "categoria":categoria_atleta.title(), "nivel":nivel_atleta.title(), "status":status_atleta.title()})
     
     can_edit = ((current_user.is_admin) or (current_user.is_coord and current_user.id==projeto.responsavel_id))
         
@@ -1428,7 +1428,7 @@ def visualizar_equipe():
     niveis_query = db.session.query(Nivel)
     status_query = db.session.query(Status)
 
-    dados_equipe = {"id":equipe.id, "nome_equipe":equipe.nome_equipe.title(), "projeto_id":projeto_equipe.id, "projeto":projeto_equipe.nome_projeto.title(),"tecnico":tecnico_nome.title(),"is_active":bool(equipe.is_active),"total_atletas":atletas_equipe.count()}
+    dados_equipe = {"id":equipe.id, "nome_equipe":equipe.nome_equipe, "projeto_id":projeto_equipe.id, "projeto":projeto_equipe.nome_projeto,"tecnico":tecnico_nome.title(),"is_active":bool(equipe.is_active),"total_atletas":atletas_equipe.count()}
 
     #Atletas da equipe
     #Dicionário tabela atletas-equipe
@@ -1445,7 +1445,7 @@ def visualizar_equipe():
 
         status_atleta = status_query.filter(Status.id==atleta.status_id).scalar().nome_status
 
-        atletas.append({"id":atleta.id, "nome_atleta":atleta.firstname_atleta.title(), "equipe":equipe.nome_equipe.title(), "modalidade":modalidade_atleta.title(), "posicao":posicao_atleta.title(), "categoria":categoria_atleta.title(), "nivel":nivel_atleta.title(), "status":status_atleta.title()})
+        atletas.append({"id":atleta.id, "nome_atleta":atleta.firstname_atleta.title(), "equipe":equipe.nome_equipe, "modalidade":modalidade_atleta.title(), "posicao":posicao_atleta.title(), "categoria":categoria_atleta.title(), "nivel":nivel_atleta.title(), "status":status_atleta.title()})
 
         if (current_user.is_admin) or (current_user.is_coord and current_user.id==projeto_equipe.responsavel_id):
             can_edit = True
@@ -1474,7 +1474,7 @@ def visualizar_atleta():
     nivel_atleta = db.session.query(Nivel.nome_nivel).filter(Nivel.id==atleta.nivel_id).scalar()
     sexo_atleta = db.session.query(Sexo.sexo).filter(Sexo.id==atleta.sexo_id).scalar()
 
-    dados_atleta = {"id":atleta.id, "nome_atleta":nome_atleta.title(), "equipe_id":equipe_atleta.id, "equipe":equipe_atleta.nome_equipe.title(), "projeto": projeto_atleta.nome_projeto.title(), "status":status_atleta.nome_status.title(), "modalidade":modalidade_atleta.title(), "posicao":posicao_atleta.title(), "categoria":categoria_atleta.title(), "nivel":nivel_atleta.title(), "sexo":sexo_atleta.title()}
+    dados_atleta = {"id":atleta.id, "nome_atleta":nome_atleta.title(), "equipe_id":equipe_atleta.id, "equipe":equipe_atleta.nome_equipe, "projeto": projeto_atleta.nome_projeto, "status":status_atleta.nome_status.title(), "modalidade":modalidade_atleta.title(), "posicao":posicao_atleta.title(), "categoria":categoria_atleta.title(), "nivel":nivel_atleta.title(), "sexo":sexo_atleta.title()}
 
     dados_pessoais_atleta = None
     dados_endereco = None
@@ -1527,8 +1527,8 @@ def visualizar_atleta():
         historico.append({
             "status": status_nome.title(),
             "motivo": h.motivo,
-            "projeto": projeto_nome.title(),
-            "equipe": equipe_nome.title(),
+            "projeto": projeto_nome,
+            "equipe": equipe_nome,
             "responsavel": responsavel_nome.title(),
             "created_at": h.created_at.strftime("%d/%m/%Y %H:%M"),
         })
