@@ -1407,7 +1407,7 @@ def visualizar_projeto():
     
     can_edit = ((current_user.is_admin) or (current_user.is_coord and current_user.id==projeto.responsavel_id))
         
-    return render_template('visualizar_projeto.html', projeto=dados_projeto, nome_cidade=cidade.nome_cidade.title(), nome_responsavel=nome_responsavel, data_criacao=datetime.strftime(projeto.created_at,"%d/%m/%Y"), n_equipes=projeto_equipes.count(), n_atletas=projeto_atletas.count(), equipes=equipes, atletas=atletas, can_edit=can_edit)
+    return render_template('visualizar_projeto.html', projeto=dados_projeto, nome_cidade=cidade.nome_cidade.title(), nome_responsavel=nome_responsavel, n_equipes=projeto_equipes.count(), n_atletas=projeto_atletas.count(), equipes=equipes, atletas=atletas, can_edit=can_edit)
 
 @app.route('/view/equipe/')
 @login_required
@@ -1428,7 +1428,7 @@ def visualizar_equipe():
     niveis_query = db.session.query(Nivel)
     status_query = db.session.query(Status)
 
-    dados_equipe = {"id":equipe.id, "nome_equipe":equipe.nome_equipe.title(), "projeto_id":projeto_equipe.id, "projeto":projeto_equipe.nome_projeto.title(),"tecnico":tecnico_nome.title(),"is_active":bool(equipe.is_active),"created_at":datetime.strftime(equipe.created_at,"%d/%m/%Y"),"total_atletas":atletas_equipe.count()}
+    dados_equipe = {"id":equipe.id, "nome_equipe":equipe.nome_equipe.title(), "projeto_id":projeto_equipe.id, "projeto":projeto_equipe.nome_projeto.title(),"tecnico":tecnico_nome.title(),"is_active":bool(equipe.is_active),"total_atletas":atletas_equipe.count()}
 
     #Atletas da equipe
     #Dicionário tabela atletas-equipe
@@ -1536,11 +1536,11 @@ def visualizar_atleta():
     return render_template("visualizar_atleta.html", atleta=dados_atleta, endereco=dados_endereco, historico=historico, dados_pessoais_atleta= dados_pessoais_atleta, can_edit=can_edit)
 
 # Cria o banco de dados e as tabelas, se ainda não existirem, dentro do contexto da aplicação
-with app.app_context():
-    create_initial_admin()
+# with app.app_context():
+#     create_initial_admin()
 
-# if __name__ == '__main__':
-    # with app.app_context():
-    #     db.create_all() # Excluir após sistema estável
-    #     create_initial_admin()
-#     app.run(debug=True)
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all() # Excluir após sistema estável
+        create_initial_admin()
+    app.run(debug=True)
