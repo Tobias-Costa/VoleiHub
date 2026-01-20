@@ -19,7 +19,7 @@
     <div class="card shadow-sm">
 
         <div class="card-body">
-            <form method="post">
+            <form method="POST" enctype="multipart/form-data">
                 {{ form.csrf_token }}
 
                 <!-- Nome -->
@@ -51,6 +51,16 @@
                     {{ form.responsavel_id.label(class="form-label") }}
                     {{ form.responsavel_id(class="form-select") }}
                     {% for error in form.responsavel_id.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Logo -->
+                <div class="mb-3">
+                    {{ form.logo.label(class="form-label") }}
+                    {{ form.logo(class="form-control") }}
+
+                    {% for error in form.logo.errors %}
                         <div class="text-danger small">{{ error }}</div>
                     {% endfor %}
                 </div>

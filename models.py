@@ -71,6 +71,7 @@ class Projeto(db.Model):
     __tablename__ = 'projetos' 
 
     id = db.Column(db.Integer, primary_key=True)
+    logo_id = db.Column(db.Integer, db.ForeignKey('imagens.id', ondelete='RESTRICT'),nullable=True)
     nome_projeto = db.Column(db.String(80), unique=True, nullable=False)
     descricao = db.Column(db.Text, nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
@@ -86,6 +87,7 @@ class Equipe(db.Model):
     __tablename__ = 'equipes' 
 
     id = db.Column(db.Integer, primary_key=True)
+    logo_id = db.Column(db.Integer, db.ForeignKey('imagens.id', ondelete='RESTRICT'),nullable=True)
     nome_equipe = db.Column(db.String(80), unique=True, nullable=False)
     projeto_id = db.Column(db.Integer, db.ForeignKey('projetos.id', ondelete="RESTRICT"), nullable=False)
     tecnico_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete="RESTRICT"), nullable=False)
@@ -226,13 +228,13 @@ class AtletaHistorico(db.Model):
     def __repr__(self):
         return f'<AtletaHistorico Status:{self.status_id}  (AtletaID:{self.atleta_id})>'
     
-# class Image(db.Model):
-#     __tablename__ = 'imagens' 
+class Image(db.Model):
+    __tablename__ = 'imagens' 
 
-#     id = db.Column(db.Integer, primary_key=True)
-#     img = db.Column(db.Text, unique=True, nullable=False)
-#     name = db.Column(db.Text, nullable=False)
-#     mimetype = db.Column(db.Text, nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    img = db.Column(db.Text, unique=True, nullable=False)
+    name = db.Column(db.Text, nullable=False)
+    mimetype = db.Column(db.Text, nullable=False)
     
-#     def __repr__(self):
-#         return f'<Image {self.name}>'
+    def __repr__(self):
+        return f'<Image {self.name}>'

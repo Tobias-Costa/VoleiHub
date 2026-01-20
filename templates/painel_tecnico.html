@@ -176,7 +176,30 @@
                     <tbody>
                         {% for equipe in equipes %}
                         <tr>
-                            <td>{{ equipe.nome_equipe }}</td>
+                            <!-- EQUIPE (LOGO + NOME) -->
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    {% if equipe.logo_id %}
+                                        <img
+                                            src="{{ url_for('get_image', id=equipe.logo_id) }}"
+                                            alt="Logo da equipe"
+                                            class="rounded-circle shadow-sm"
+                                            style="width:36px; height:36px; object-fit:cover;flex-shrink: 0;"
+                                        >
+                                    {% else %}
+                                        <div
+                                            class="rounded-circle bg-light border d-flex align-items-center justify-content-center"
+                                            style="width:36px; height:36px;flex-shrink: 0;"
+                                        >
+                                            <i class="bi bi-image text-muted"></i>
+                                        </div>
+                                    {% endif %}
+
+                                    <span class="fw-semibold">
+                                        {{ equipe.nome_equipe }}
+                                    </span>
+                                </div>
+                            </td>
                             <td>{{ equipe.nome_projeto }}</td>
                             <td>
                                 {% if equipe.is_active %}
@@ -189,7 +212,7 @@
                             <td class="text-end">
                                 <a href="{{ url_for('visualizar_equipe', equipe_id=equipe.id) }}" 
                                 class="btn btn-sm btn-outline-primary">
-                                    Ver
+                                    <i class="bi bi-eye"></i>
                                 </a>
                             </td>
                         </tr>

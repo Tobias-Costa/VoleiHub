@@ -1,7 +1,8 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, TextAreaField, SelectField, BooleanField, DateField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Length, Email, EqualTo, Optional
-from flask import Flask, request, redirect, url_for, render_template, flash, abort
+from flask import Flask, Response, request, redirect, url_for, render_template, flash, abort
 from sqlalchemy import or_
 from flask_migrate import Migrate
 from admin import init_admin 
@@ -9,9 +10,11 @@ from datetime import datetime
 from models import *
 from dotenv import load_dotenv
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from werkzeug.utils import secure_filename
+from werkzeug.exceptions import RequestEntityTooLarge
+import hashlib
 import os
 import re
-import hashlib
 
 def somente_digitos(valor):
     """Remove tudo que não for número."""
@@ -64,6 +67,7 @@ lm.login_message = None
 # Configuração do banco de dados SQLite
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL")
 app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY", "chave-padrao-de-desenvolvimento")
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10 MB
 # Inicializa o 'db' e as migrações com o aplicativo 'app'
 db.init_app(app)
 migrate = Migrate(app, db, render_as_batch=True)
@@ -96,6 +100,11 @@ def create_initial_admin():
 
     db.session.add(admin)
     db.session.commit()
+
+@app.errorhandler(RequestEntityTooLarge)
+def handle_file_too_large(e):
+    flash("O arquivo enviado é muito grande. O limite é de 10 MB.", "danger")
+    return redirect(request.referrer or "/")
 
 @lm.user_loader
 def user_loader(id):
@@ -208,6 +217,13 @@ class ProjetoForm(FlaskForm):
         validators=[DataRequired(message="Selecione um responsável para coordenar o projeto.")]
     )
 
+    logo = FileField(
+        'Logo do Projeto',
+        validators=[
+            FileAllowed(['jpg', 'jpeg', 'png'], 'Apenas imagens são permitidas.')
+        ]
+    )
+
 class EquipeForm(FlaskForm):
     nome_equipe = StringField(
         "Nome da Equipe",
@@ -227,6 +243,13 @@ class EquipeForm(FlaskForm):
     )
 
     is_active = BooleanField("Equipe ativa", default=True)
+
+    logo = FileField(
+        'Logo da Equipe',
+        validators=[
+            FileAllowed(['jpg', 'jpeg', 'png'], 'Apenas imagens são permitidas.')
+        ]
+    )
 
 class AtletaForm(FlaskForm):
     firstname_atleta = StringField(
@@ -307,6 +330,11 @@ class EnderecoAtletaForm(FlaskForm):
 @app.route('/')
 def index():
     return redirect(url_for('home'))
+
+@app.route('/imagens/<int:id>')
+def get_image(id):
+    imagem = Image.query.get_or_404(id)
+    return Response(imagem.img, mimetype=imagem.mimetype)
 
 @app.route('/cadastro', methods=["GET","POST"])
 def cadastro_usuario():
@@ -461,7 +489,7 @@ def home():
 
         projeto_atletas = atletas_query.join(Equipe, Equipe.id == Atleta.equipe_id).filter(Equipe.projeto_id == projeto.id).count()
 
-        projetos.append({"id":projeto.id, "nome":projeto.nome_projeto, "cidade":projeto_cidade.title(), "n_equipes":projeto_equipes, "n_atletas":projeto_atletas, "is_active":bool(projeto.is_active)})
+        projetos.append({"id":projeto.id, "logo_id":projeto.logo_id, "nome":projeto.nome_projeto, "cidade":projeto_cidade.title(), "n_equipes":projeto_equipes, "n_atletas":projeto_atletas, "is_active":bool(projeto.is_active)})
 
     cidades = [{"id":c.id, "nome_cidade":c.nome_cidade.title()} for c in cidades_query.all()]
 
@@ -592,7 +620,7 @@ def coordenador_dashboard():
 
         projeto_atletas = atletas_query.filter(Equipe.projeto_id == projeto.id).count()
 
-        projetos.append({"id":projeto.id, "nome":projeto.nome_projeto, "cidade":projeto_cidade.title(), "n_equipes":projeto_equipes, "n_atletas":projeto_atletas, "is_active":bool(projeto.is_active)})
+        projetos.append({"id":projeto.id, "logo_id":projeto.logo_id, "nome":projeto.nome_projeto, "cidade":projeto_cidade.title(), "n_equipes":projeto_equipes, "n_atletas":projeto_atletas, "is_active":bool(projeto.is_active)})
 
     cidades = [{"id":c.id, "nome_cidade":c.nome_cidade.title()} for c in cidades_query.all()]
 
@@ -711,7 +739,7 @@ def tecnico_dashboard():
     for equipe, projeto in lista_equipes:
         total_atletas = atletas_query.filter(Atleta.equipe_id == equipe.id).count()
 
-        equipes.append({"id":equipe.id, "nome_equipe":equipe.nome_equipe,"nome_projeto":projeto.nome_projeto, "is_active":bool(equipe.is_active),"total_atletas":total_atletas})
+        equipes.append({"id":equipe.id, "logo_id":equipe.logo_id, "nome_equipe":equipe.nome_equipe,"nome_projeto":projeto.nome_projeto, "is_active":bool(equipe.is_active),"total_atletas":total_atletas})
 
     return render_template("painel_tecnico.html", dashboard=dashboard_dict, transferencias=transferencias, equipes=equipes)
 
@@ -755,11 +783,28 @@ def criar_projeto():
     if form.validate_on_submit():
 
         try:
+
+            logo_id = None
+            if form.logo.data:
+                file = form.logo.data
+
+                imagem = Image(
+                    img=file.read(),
+                    name=secure_filename(file.filename),
+                    mimetype=file.mimetype
+                )
+
+                db.session.add(imagem)
+                db.session.flush()
+
+                logo_id = imagem.id
+
             novo_projeto = Projeto(
                 nome_projeto=form.nome_projeto.data,
                 descricao=form.descricao.data,
                 cidade_id=form.cidade_id.data,
-                responsavel_id=form.responsavel_id.data
+                responsavel_id=form.responsavel_id.data,
+                logo_id=logo_id,
                 )
             db.session.add(novo_projeto)
             db.session.commit()
@@ -823,6 +868,29 @@ def editar_projeto():
             projeto.is_active = form.is_active.data
             projeto.cidade_id = form.cidade_id.data
             projeto.responsavel_id = form.responsavel_id.data
+
+            # 🔹 Se um novo arquivo foi enviado
+            if form.logo.data:
+                file = form.logo.data
+
+                # Caso ainda não exista imagem (ex: projeto antigo)
+                if projeto.logo_id == None:
+                    imagem = Image(
+                        img=file.read(),
+                        name=secure_filename(file.filename),
+                        mimetype=file.mimetype
+                    )
+                    db.session.add(imagem)
+                    db.session.flush()
+                    projeto.logo_id = imagem.id
+
+                # Caso já exista → EDITA o slot atual
+                else:
+                    imagem = Image.query.get_or_404(projeto.logo_id)
+                    imagem.img = file.read()
+                    imagem.name = secure_filename(file.filename)
+                    imagem.mimetype = file.mimetype
+
             db.session.commit()
             flash("Projeto atualizado com sucesso!", "success")
             return redirect(url_for('editar_projeto', projeto_id=projeto.id))
@@ -869,13 +937,29 @@ def criar_equipe():
     form.tecnico_id.choices.insert(0, (0, "Selecione um responsável"))
 
     if form.validate_on_submit():
-        nova_equipe = Equipe(
-            nome_equipe=form.nome_equipe.data,
-            projeto_id=form.projeto_id.data,
-            tecnico_id=form.tecnico_id.data,
-        )
-
         try:
+            logo_id = None
+            if form.logo.data:
+                file = form.logo.data
+
+                imagem = Image(
+                    img=file.read(),
+                    name=secure_filename(file.filename),
+                    mimetype=file.mimetype
+                )
+
+                db.session.add(imagem)
+                db.session.flush()
+
+                logo_id = imagem.id
+
+            nova_equipe = Equipe(
+                nome_equipe=form.nome_equipe.data,
+                projeto_id=form.projeto_id.data,
+                tecnico_id=form.tecnico_id.data,
+                logo_id=logo_id,
+            )
+
             db.session.add(nova_equipe)
             db.session.commit()
             flash("Equipe criada com sucesso!", "success")
@@ -945,6 +1029,29 @@ def editar_equipe():
             equipe.projeto_id = form.projeto_id.data
             equipe.tecnico_id = form.tecnico_id.data
             equipe.is_active = form.is_active.data
+
+            # 🔹 Se um novo arquivo foi enviado
+            if form.logo.data:
+                file = form.logo.data
+
+                # Caso ainda não exista imagem (ex: projeto antigo)
+                if equipe.logo_id == None:
+                    imagem = Image(
+                        img=file.read(),
+                        name=secure_filename(file.filename),
+                        mimetype=file.mimetype
+                    )
+                    db.session.add(imagem)
+                    db.session.flush()
+                    equipe.logo_id = imagem.id
+
+                # Caso já exista → EDITA o slot atual
+                else:
+                    imagem = Image.query.get_or_404(equipe.logo_id)
+                    imagem.img = file.read()
+                    imagem.name = secure_filename(file.filename)
+                    imagem.mimetype = file.mimetype
+
             db.session.commit()
             flash("Equipe atualizada com sucesso!", "success")
             return redirect(url_for("editar_equipe", equipe_id=equipe.id))
@@ -1378,7 +1485,7 @@ def visualizar_projeto():
 
     # Querys principais para a rota
     projeto = db.session.query(Projeto).filter(Projeto.id == projeto_id).scalar()
-    dados_projeto = {"id":projeto.id, "nome_projeto":projeto.nome_projeto, "descricao":projeto.descricao, "is_active":bool(projeto.is_active)}
+    dados_projeto = {"id":projeto.id, "logo_id":projeto.logo_id, "nome_projeto":projeto.nome_projeto, "descricao":projeto.descricao, "is_active":bool(projeto.is_active)}
 
     projeto_equipes = db.session.query(Equipe).filter_by(projeto_id=projeto.id)
     projeto_atletas = db.session.query(Atleta).join(Equipe, Equipe.id == Atleta.equipe_id).filter(Equipe.projeto_id == projeto.id)
@@ -1400,7 +1507,7 @@ def visualizar_projeto():
         tecnico_equipe = usuarios_query.filter(Usuario.id == equipe.tecnico_id).scalar()
         total_atletas = projeto_atletas.filter(Atleta.equipe_id == equipe.id).count()
 
-        equipes.append({"id":equipe.id, "nome_equipe":equipe.nome_equipe,"tecnico":tecnico_equipe.firstname_usuario.title(), "is_active":bool(equipe.is_active),"total_atletas":total_atletas})
+        equipes.append({"id":equipe.id, "logo_id":equipe.logo_id, "nome_equipe":equipe.nome_equipe,"tecnico":tecnico_equipe.firstname_usuario.title(), "is_active":bool(equipe.is_active),"total_atletas":total_atletas})
 
     #Dicionário tabela atletas-equipe
     atletas = []
@@ -1442,7 +1549,7 @@ def visualizar_equipe():
     niveis_query = db.session.query(Nivel)
     status_query = db.session.query(Status)
 
-    dados_equipe = {"id":equipe.id, "nome_equipe":equipe.nome_equipe, "projeto_id":projeto_equipe.id, "projeto":projeto_equipe.nome_projeto,"tecnico":tecnico_nome.title(),"is_active":bool(equipe.is_active),"total_atletas":atletas_equipe.count()}
+    dados_equipe = {"id":equipe.id, "logo_id":equipe.logo_id, "nome_equipe":equipe.nome_equipe, "projeto_id":projeto_equipe.id, "projeto":projeto_equipe.nome_projeto,"tecnico":tecnico_nome.title(),"is_active":bool(equipe.is_active),"total_atletas":atletas_equipe.count()}
 
     #Atletas da equipe
     #Dicionário tabela atletas-equipe

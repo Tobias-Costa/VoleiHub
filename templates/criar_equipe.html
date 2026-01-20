@@ -16,7 +16,7 @@
 
     <h3 class="fw-bold mb-4">Criar Nova Equipe</h3>
 
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data">
         {{ form.csrf_token }}
 
         <div class="card shadow-sm">
@@ -45,6 +45,16 @@
                     {{ form.tecnico_id.label(class="form-label") }}
                     {{ form.tecnico_id(class="form-select") }}
                     {% for error in form.tecnico_id.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Logo -->
+                <div class="mb-3">
+                    {{ form.logo.label(class="form-label") }}
+                    {{ form.logo(class="form-control") }}
+
+                    {% for error in form.logo.errors %}
                         <div class="text-danger small">{{ error }}</div>
                     {% endfor %}
                 </div>

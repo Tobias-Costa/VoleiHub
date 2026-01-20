@@ -21,7 +21,7 @@
 
         <div class="d-flex justify-content-between align-items-center flex-wrap">
             <div>
-            
+                    
                 <span class="badge {% if equipe.is_active %}bg-success{% else %}bg-secondary{% endif %}">
                     {% if equipe.is_active %}
                         Ativa
@@ -36,9 +36,22 @@
 
             </div>
 
-            <!-- <div> LOGO DA EQUIPE
-                <p class="mb-1"><strong>Criada em:</strong> {{ equipe.created_at }}</p>
-            </div> -->
+            <!-- LOGO DA EQUIPE -->
+            {% if equipe.logo_id %}
+                <div>
+                    <img
+                        src="{{ url_for('get_image', id=equipe.logo_id) }}"
+                        alt="Logo da equipe"
+                        class="rounded-circle shadow-sm"
+                        style="
+                            width: 150px;
+                            height: 150px;
+                            object-fit: cover;
+                            border: 2px solid #dee2e6;
+                        "
+                    >
+                </div>
+            {% endif %}
 
         </div>
 
@@ -81,7 +94,7 @@
                     <td class="text-end">
                         <a href="{{ url_for('visualizar_atleta', atleta_id=atleta.id) }}"
                            class="btn btn-sm btn-outline-primary">
-                            Ver
+                            <i class="bi bi-eye"></i>
                         </a>
                     </td>
                 </tr>

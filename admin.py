@@ -53,6 +53,7 @@ class ProjetoAdmin(AdminModelView):
         "is_active",
         "cidade_id",
         "responsavel_id",
+        "logo_id",
     ]
 
     # Campos do formulário com Select2Field
@@ -66,6 +67,13 @@ class ProjetoAdmin(AdminModelView):
             "Responsável",
             coerce=int,
             choices=lambda: [(u.id, f"{u.firstname_usuario} {u.lastname_usuario}") for u in Usuario.query.all()]
+        ),
+        "logo_id": Select2Field(
+            "Logo (Imagem)",
+            coerce=int,
+            allow_blank=True,
+            blank_text="Sem logo",
+            choices=lambda: [(i.id, i.name or f"Imagem {i.id}") for i in Image.query.all()]
         ),
     }
 
@@ -182,7 +190,7 @@ class AtletaAdmin(AdminModelView):
 
 class EquipeAdmin(AdminModelView):
 
-    form_columns = ["nome_equipe", "projeto_id", "tecnico_id", "is_active"]
+    form_columns = ["nome_equipe", "projeto_id", "tecnico_id", "is_active", "logo_id"]
 
     form_extra_fields = {
         "projeto_id": Select2Field(
@@ -197,6 +205,13 @@ class EquipeAdmin(AdminModelView):
                 (u.id, f"{u.firstname_usuario} {u.lastname_usuario}")
                 for u in Usuario.query.all()
             ]
+        ),
+        "logo_id": Select2Field(
+            "Logo (Imagem)",
+            coerce=int,
+            allow_blank=True,
+            blank_text="Sem logo",
+            choices=lambda: [(i.id, i.name or f"Imagem {i.id}") for i in Image.query.all()]
         ),
     }
 
@@ -413,6 +428,11 @@ class AtletaEnderecoAdmin(AdminModelView):
         ),
     }
 
+class ImageAdmin(AdminModelView):
+    column_list = ["id", "name", "mimetype"]
+    column_searchable_list = ["name", "mimetype"]
+
+    form_excluded_columns = ["img"]  # NÃO editar binário no admin
 
 
 def init_admin(app):
@@ -425,6 +445,7 @@ def init_admin(app):
     admin.add_view(AtletaEnderecoAdmin(AtletaEndereco, db.session))
     admin.add_view(AtletaHistoricoAdmin(AtletaHistorico, db.session))
     admin.add_view(TransferenciaAdmin(Transferencia, db.session))
+    admin.add_view(ImageAdmin(Image, db.session))
     admin.add_view(AdminModelView(Estado, db.session))
     admin.add_view(CidadeAdmin(Cidade, db.session))
     admin.add_view(AdminModelView(Modalidade, db.session))
