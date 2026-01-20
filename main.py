@@ -257,6 +257,16 @@ class AtletaForm(FlaskForm):
     rg = StringField("RG", validators=[DataRequired(message="O RG é obrigatório."), Length(min=7, max=20, message="O RG deve ter entre 7 e 20 caracteres.")])
     cpf = StringField("CPF", validators=[DataRequired(message="O CPF é obrigatório."), Length(min=11, max=11, message="O CPF deve ter 11 dígitos.")])
 
+    registro_cuca = StringField("Registro CUCA", validators=[
+        Optional(),
+        Length(min=2, max=40, message="O registro CUCA deve ter entre 2 e 40 caracteres.")
+    ])
+
+    registro_cbv = StringField("Registro CBV", validators=[
+        Optional(),
+        Length(min=2, max=40, message="O registro CBV deve ter entre 2 e 40 caracteres.")
+    ])
+
     sexo_id = SelectField("Sexo", coerce=int, validators=[DataRequired(message="Selecione o sexo.")])
     modalidade_id = SelectField("Modalidade", coerce=int, validators=[DataRequired(message="Selecione a modalidade.")])
     posicao_id = SelectField("Posição", coerce=int, validators=[DataRequired(message="Selecione a posição.")])
@@ -1004,6 +1014,8 @@ def criar_atleta():
             telefone2=somente_digitos(form.telefone2.data),
             rg=somente_digitos(form.rg.data),
             cpf=somente_digitos(form.cpf.data),
+            registro_cuca=form.registro_cuca.data,
+            registro_cbv=form.registro_cbv.data,
             sexo_id=form.sexo_id.data,
             modalidade_id=form.modalidade_id.data,
             posicao_id=form.posicao_id.data,
@@ -1136,6 +1148,8 @@ def editar_atleta():
             atleta.telefone2=somente_digitos(form.telefone2.data)
             atleta.rg=somente_digitos(form.rg.data)
             atleta.cpf=somente_digitos(form.cpf.data)
+            atleta.registro_cuca=form.registro_cuca.data
+            atleta.registro_cbv=form.registro_cbv.data
             atleta.sexo_id=form.sexo_id.data
             atleta.modalidade_id=form.modalidade_id.data
             atleta.posicao_id=form.posicao_id.data
@@ -1491,6 +1505,8 @@ def visualizar_atleta():
             "telefone2":format_telefone(atleta.telefone2),
             "rg":format_rg(atleta.rg),
             "cpf":format_cpf(atleta.cpf),
+            "cuca":atleta.registro_cuca,
+            "cbv":atleta.registro_cbv,
             "data_nascimento":datetime.strftime(atleta.data_nascimento,"%d/%m/%Y")
         }
 

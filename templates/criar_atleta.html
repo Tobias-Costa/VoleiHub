@@ -161,6 +161,26 @@
                     </div>
                 </div>
 
+                <div class="row">
+
+                    <div class="col-md-4 mb-3">
+                        {{ form.registro_cuca.label(class="form-label") }}
+                        {{ form.registro_cuca(class="form-control") }}
+                        {% for error in form.registro_cuca.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        {{ form.registro_cbv.label(class="form-label") }}
+                        {{ form.registro_cbv(class="form-control") }}
+                        {% for error in form.registro_cbv.errors %}
+                            <div class="text-danger small">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+
                 <div class="d-flex justify-content-between">
                     <a href="{{ url_for('home') }}" class="btn btn-secondary">
                         Cancelar

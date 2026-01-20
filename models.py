@@ -62,7 +62,7 @@ class Cidade(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     nome_cidade = db.Column(db.String(40), unique=True, nullable=False)
-    estado_id = db.Column(db.Integer, db.ForeignKey('estados.id', ondelete="CASCADE"), nullable=False)
+    estado_id = db.Column(db.Integer, db.ForeignKey('estados.id', ondelete="RESTRICT"), nullable=False)
     
     def __repr__(self):
         return f'<Cidade {self.nome_cidade}>'
@@ -74,8 +74,8 @@ class Projeto(db.Model):
     nome_projeto = db.Column(db.String(80), unique=True, nullable=False)
     descricao = db.Column(db.Text, nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
-    cidade_id = db.Column(db.Integer, db.ForeignKey('cidades.id', ondelete="CASCADE"), nullable=False)
-    responsavel_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete="CASCADE"), nullable=False)
+    cidade_id = db.Column(db.Integer, db.ForeignKey('cidades.id', ondelete="RESTRICT"), nullable=False)
+    responsavel_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete="RESTRICT"), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now) 
     last_edited = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now) 
      
@@ -87,8 +87,8 @@ class Equipe(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     nome_equipe = db.Column(db.String(80), unique=True, nullable=False)
-    projeto_id = db.Column(db.Integer, db.ForeignKey('projetos.id', ondelete="CASCADE"), nullable=False)
-    tecnico_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete="CASCADE"), nullable=False)
+    projeto_id = db.Column(db.Integer, db.ForeignKey('projetos.id', ondelete="RESTRICT"), nullable=False)
+    tecnico_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete="RESTRICT"), nullable=False)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now) 
     last_edited = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now) 
@@ -155,12 +155,14 @@ class Atleta(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     # profile_picture_url = Column(String(255), nullable=True) 
-    equipe_id = db.Column(db.Integer, db.ForeignKey('equipes.id', ondelete="CASCADE"), nullable=False)
+    equipe_id = db.Column(db.Integer, db.ForeignKey('equipes.id', ondelete="RESTRICT"), nullable=False)
     firstname_atleta = db.Column(db.String(80), nullable=False)
     lastname_atleta = db.Column(db.String(80), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     rg = db.Column(db.String(20), unique=True, nullable=False)
     cpf = db.Column(db.String(11), unique=True, nullable=False)
+    registro_cuca = db.Column(db.String(40), nullable=True)
+    registro_cbv = db.Column(db.String(40), nullable=True)
     data_nascimento =  db.Column(db.Date, nullable=False)
     telefone1 = db.Column(db.String(20), nullable=False)
     telefone2 = db.Column(db.String(20), nullable=True)
@@ -185,7 +187,7 @@ class AtletaEndereco(db.Model):
     numero = db.Column(db.String(20), nullable=False) # Armazenar como string para incluir 's/n', 'apto 101'
     complemento = db.Column(db.String(100), nullable=True)
     bairro = db.Column(db.String(100), nullable=False)
-    cidade_id = db.Column(db.Integer, db.ForeignKey('cidades.id', ondelete="CASCADE"), nullable=False)
+    cidade_id = db.Column(db.Integer, db.ForeignKey('cidades.id', ondelete="RESTRICT"), nullable=False)
     cep = db.Column(db.String(8), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now) 
     last_edited = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now) 
@@ -197,13 +199,13 @@ class Transferencia(db.Model):
     __tablename__ = 'transferencias'
 
     id = db.Column(db.Integer, primary_key=True)
-    atleta_id = db.Column(db.Integer, db.ForeignKey('atletas.id', ondelete="CASCADE"), nullable=False)
-    projeto_origem_id = db.Column(db.Integer, db.ForeignKey('projetos.id', ondelete="CASCADE"), nullable=False)
-    equipe_origem_id = db.Column(db.Integer, db.ForeignKey('equipes.id', ondelete="CASCADE"), nullable=False)
-    projeto_destino_id = db.Column(db.Integer, db.ForeignKey('projetos.id', ondelete="CASCADE"), nullable=False)
-    equipe_destino_id = db.Column(db.Integer, db.ForeignKey('equipes.id', ondelete="CASCADE"), nullable=False)
+    atleta_id = db.Column(db.Integer, db.ForeignKey('atletas.id', ondelete="RESTRICT"), nullable=False)
+    projeto_origem_id = db.Column(db.Integer, db.ForeignKey('projetos.id', ondelete="RESTRICT"), nullable=False)
+    equipe_origem_id = db.Column(db.Integer, db.ForeignKey('equipes.id', ondelete="RESTRICT"), nullable=False)
+    projeto_destino_id = db.Column(db.Integer, db.ForeignKey('projetos.id', ondelete="RESTRICT"), nullable=False)
+    equipe_destino_id = db.Column(db.Integer, db.ForeignKey('equipes.id', ondelete="RESTRICT"), nullable=False)
     motivo = db.Column(db.String(255), nullable=True)
-    responsavel_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete="CASCADE"), nullable=False)
+    responsavel_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete="RESTRICT"), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now) 
 
     def __repr__(self):
@@ -213,13 +215,24 @@ class AtletaHistorico(db.Model):
     __tablename__ = 'historicos'
 
     id = db.Column(db.Integer, primary_key=True)
-    atleta_id = db.Column(db.Integer, db.ForeignKey('atletas.id', ondelete="CASCADE"), nullable=False)
-    projeto_id = db.Column(db.Integer, db.ForeignKey('projetos.id', ondelete="CASCADE"), nullable=False)
-    equipe_id = db.Column(db.Integer, db.ForeignKey('equipes.id', ondelete="CASCADE"), nullable=False)
-    status_id = db.Column(db.Integer, db.ForeignKey('status.id', ondelete="CASCADE"), nullable=False)
+    atleta_id = db.Column(db.Integer, db.ForeignKey('atletas.id', ondelete="RESTRICT"), nullable=False)
+    projeto_id = db.Column(db.Integer, db.ForeignKey('projetos.id', ondelete="RESTRICT"), nullable=False)
+    equipe_id = db.Column(db.Integer, db.ForeignKey('equipes.id', ondelete="RESTRICT"), nullable=False)
+    status_id = db.Column(db.Integer, db.ForeignKey('status.id', ondelete="RESTRICT"), nullable=False)
     motivo = db.Column(db.String(255), nullable=True)
-    responsavel_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete="CASCADE"), nullable=False)
+    responsavel_id = db.Column(db.Integer, db.ForeignKey('usuarios.id', ondelete="RESTRICT"), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now) 
     
     def __repr__(self):
         return f'<AtletaHistorico Status:{self.status_id}  (AtletaID:{self.atleta_id})>'
+    
+# class Image(db.Model):
+#     __tablename__ = 'imagens' 
+
+#     id = db.Column(db.Integer, primary_key=True)
+#     img = db.Column(db.Text, unique=True, nullable=False)
+#     name = db.Column(db.Text, nullable=False)
+#     mimetype = db.Column(db.Text, nullable=False)
+    
+#     def __repr__(self):
+#         return f'<Image {self.name}>'

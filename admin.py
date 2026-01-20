@@ -93,6 +93,8 @@ class AtletaAdmin(AdminModelView):
         "id",
         "firstname_atleta",
         "lastname_atleta",
+        "registro_cuca",  # Adicionado à listagem
+        "registro_cbv",   # Adicionado à listagem
         "email",
         "equipe_id",
         "status_id",
@@ -102,8 +104,12 @@ class AtletaAdmin(AdminModelView):
     column_labels = {
         "firstname_atleta": "Nome",
         "lastname_atleta": "Sobrenome",
+        "registro_cuca": "Registro CUCA", # Rótulo amigável
+        "registro_cbv": "Registro CBV",   # Rótulo amigável
         "equipe_id": "Equipe",
         "status_id": "Status",
+        "cpf": "CPF",
+        "rg": "RG"
     }
 
     column_formatters = {
@@ -119,6 +125,8 @@ class AtletaAdmin(AdminModelView):
         "email",
         "rg",
         "cpf",
+        "registro_cuca", # Campo para preencher no Admin
+        "registro_cbv",  # Campo para preencher no Admin
         "data_nascimento",
         "telefone1",
         "telefone2",
