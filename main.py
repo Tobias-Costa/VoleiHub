@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import RequestEntityTooLarge
-import hashlib
+from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import re
 
@@ -53,10 +53,6 @@ def format_cep(cep):
     
     return cep
 
-def hash_password(txt):
-    hash_obj = hashlib.sha256(txt.encode('utf-8'))
-    return hash_obj.hexdigest()
-
 # Carrega as variáveis do arquivo .env para o sistema
 load_dotenv()
 
@@ -88,7 +84,7 @@ def create_initial_admin():
         firstname_usuario="ADMIN",
         lastname_usuario="USER",
         email=admin_email,
-        password=hash_password(admin_password),
+        password=generate_password_hash(admin_password, method="pbkdf2:sha256", salt_length=8),
         telefone1="00000000000",
         telefone2=None,
         is_admin=True,
@@ -348,7 +344,7 @@ def cadastro_usuario():
             firstname_usuario = form.firstname_usuario.data.upper(),
             lastname_usuario = form.lastname_usuario.data.upper(),
             email = form.email.data,
-            password = hash_password(form.password.data),
+            password = generate_password_hash(form.password.data, method="pbkdf2:sha256", salt_length=8),
             telefone1 = somente_digitos(form.telefone1.data),
             telefone2 = somente_digitos(form.telefone2.data),
             )
@@ -370,12 +366,12 @@ def login():
     if form.validate_on_submit():
         email = form.email.data
         password = form.password.data
-        user = db.session.query(Usuario).filter_by(email=email, password=hash_password(password)).first()
-        if user:
+        user = Usuario.query.filter_by(email=email).first()
+        if user and check_password_hash(user.password, password):
             login_user(user)
             return redirect(url_for('home'))
-        elif not user:
-            flash("Nome ou senha incorretos.", "danger")
+        else:
+            flash("Email ou senha incorretos.", "danger")
         
     return render_template("login.html", form=form)
 
