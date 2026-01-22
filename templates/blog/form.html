@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Posts{% endblock %}
+
+{% block content %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<div class="container my-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="card shadow-sm">
+                <div class="card-body">
+
+                    <h4 class="fw-bold mb-4">{{ titulo_pagina }}</h4>
+
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+
+                        <!-- Título -->
+                        <div class="mb-3">
+                            {{ form.titulo.label(class="form-label") }}
+                            {{ form.titulo(class="form-control") }}
+                            {% for error in form.titulo.errors %}
+                                <small class="text-danger">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Subtítulo -->
+                        <div class="mb-3">
+                            {{ form.subtitulo.label(class="form-label") }}
+                            {{ form.subtitulo(class="form-control") }}
+                        </div>
+
+                        <!-- Texto -->
+                        <div class="mb-3">
+                            {{ form.texto.label(class="form-label") }}
+                            {{ form.texto(class="form-control", rows="7") }}
+                            {% for error in form.texto.errors %}
+                                <small class="text-danger">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Imagem -->
+                        <div class="mb-3">
+                            {{ form.imagem.label(class="form-label") }}
+                            {{ form.imagem(class="form-control") }}
+                            {% for error in form.imagem.errors %}
+                                <small class="text-danger">{{ error }}</small>
+                            {% endfor %}
+                        </div>
+
+                        {% if post and post.imagem_id %}
+                            <div class="mb-4 text-center">
+                                <small class="text-muted d-block mb-2">
+                                    Imagem atual
+                                </small>
+                                <img
+                                    src="{{ url_for('get_image', id=post.imagem_id) }}"
+                                    class="img-fluid rounded shadow-sm"
+                                    loading="lazy"
+                                    style="max-height: 250px; object-fit: cover;"
+                                >
+                            </div>
+                        {% endif %}
+
+                        <!-- Link de ação -->
+                        <div class="mb-4">
+                            {{ form.link_acao.label(class="form-label") }}
+                            {{ form.link_acao(class="form-control", placeholder="https://...") }}
+                        </div>
+
+                        <!-- Ações -->
+                        <div class="d-flex justify-content-end gap-2">
+                            <a href="{{ url_for('blog_feed') }}"
+                               class="btn btn-outline-secondary">
+                                Cancelar
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -228,7 +228,7 @@ class AtletaHistorico(db.Model):
     def __repr__(self):
         return f'<AtletaHistorico Status:{self.status_id}  (AtletaID:{self.atleta_id})>'
     
-class Image(db.Model):
+class Imagem(db.Model):
     __tablename__ = 'imagens' 
 
     id = db.Column(db.Integer, primary_key=True)
@@ -238,3 +238,16 @@ class Image(db.Model):
     
     def __repr__(self):
         return f'<Image {self.name}>'
+    
+class BlogPost(db.Model):
+    __tablename__ = "blog_posts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    autor_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
+    imagem_id = db.Column(db.Integer, db.ForeignKey("imagens.id"), nullable=True)
+    titulo = db.Column(db.String(150), nullable=False)
+    subtitulo = db.Column(db.String(255), nullable=True)
+    texto = db.Column(db.Text, nullable=False)
+    link_acao = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.now, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now, nullable=False)

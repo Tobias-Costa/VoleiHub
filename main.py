@@ -53,6 +53,21 @@ def format_cep(cep):
     
     return cep
 
+def pode_criar_post(user):
+    return user.is_authenticated and (user.is_admin or user.is_coord)
+    
+def pode_editar_post(post, user):
+    if not user.is_authenticated:
+        return False
+
+    if user.is_admin:
+        return True
+
+    if user.is_coord and post.autor_id == user.id:
+        return True
+
+    return False
+
 # Carrega as variáveis do arquivo .env para o sistema
 load_dotenv()
 
@@ -322,6 +337,39 @@ class EnderecoAtletaForm(FlaskForm):
         validators=[DataRequired(message="O CEP é obrigatório.")]
     )
 
+class BlogPostForm(FlaskForm):
+    titulo = StringField(
+        "Título",
+        validators=[
+            DataRequired(message="O título é obrigatório."),
+            Length(max=150)
+        ]
+    )
+
+    subtitulo = StringField(
+        "Subtítulo",
+        validators=[Optional(), Length(max=255)]
+    )
+
+    texto = TextAreaField(
+        "Conteúdo",
+        validators=[DataRequired(message="O texto é obrigatório.")]
+    )
+
+    imagem = FileField(
+        'Imagem do Post',
+        validators=[
+            FileAllowed(['jpg', 'jpeg', 'png'], 'Apenas imagens são permitidas.')
+        ]
+    )
+
+    link_acao = StringField(
+        "Link de ação",
+        validators=[Optional(), Length(max=255)]
+    )
+
+    submit = SubmitField("Salvar post")
+
 # --- Rotas da Aplicação ---
 @app.route('/')
 def index():
@@ -329,7 +377,7 @@ def index():
 
 @app.route('/imagens/<int:id>')
 def get_image(id):
-    imagem = Image.query.get_or_404(id)
+    imagem = Imagem.query.get_or_404(id)
     return Response(imagem.img, mimetype=imagem.mimetype)
 
 @app.route('/cadastro', methods=["GET","POST"])
@@ -784,7 +832,7 @@ def criar_projeto():
             if form.logo.data:
                 file = form.logo.data
 
-                imagem = Image(
+                imagem = Imagem(
                     img=file.read(),
                     name=secure_filename(file.filename),
                     mimetype=file.mimetype
@@ -871,7 +919,7 @@ def editar_projeto():
 
                 # Caso ainda não exista imagem (ex: projeto antigo)
                 if projeto.logo_id == None:
-                    imagem = Image(
+                    imagem = Imagem(
                         img=file.read(),
                         name=secure_filename(file.filename),
                         mimetype=file.mimetype
@@ -882,7 +930,7 @@ def editar_projeto():
 
                 # Caso já exista → EDITA o slot atual
                 else:
-                    imagem = Image.query.get_or_404(projeto.logo_id)
+                    imagem = Imagem.query.get_or_404(projeto.logo_id)
                     imagem.img = file.read()
                     imagem.name = secure_filename(file.filename)
                     imagem.mimetype = file.mimetype
@@ -938,7 +986,7 @@ def criar_equipe():
             if form.logo.data:
                 file = form.logo.data
 
-                imagem = Image(
+                imagem = Imagem(
                     img=file.read(),
                     name=secure_filename(file.filename),
                     mimetype=file.mimetype
@@ -1032,7 +1080,7 @@ def editar_equipe():
 
                 # Caso ainda não exista imagem (ex: projeto antigo)
                 if equipe.logo_id == None:
-                    imagem = Image(
+                    imagem = Imagem(
                         img=file.read(),
                         name=secure_filename(file.filename),
                         mimetype=file.mimetype
@@ -1043,7 +1091,7 @@ def editar_equipe():
 
                 # Caso já exista → EDITA o slot atual
                 else:
-                    imagem = Image.query.get_or_404(equipe.logo_id)
+                    imagem = Imagem.query.get_or_404(equipe.logo_id)
                     imagem.img = file.read()
                     imagem.name = secure_filename(file.filename)
                     imagem.mimetype = file.mimetype
@@ -1653,6 +1701,153 @@ def visualizar_atleta():
         })
 
     return render_template("visualizar_atleta.html", atleta=dados_atleta, endereco=dados_endereco, historico=historico, dados_pessoais_atleta= dados_pessoais_atleta, can_edit=can_edit)
+
+@app.route("/blog")
+@login_required
+def blog_feed():
+    posts = BlogPost.query.order_by(BlogPost.created_at.desc()).all()
+
+    autores = {
+        u.id: u.firstname_usuario.title()
+        for u in Usuario.query.filter(
+            Usuario.id.in_([p.autor_id for p in posts])
+        ).all()
+    }
+
+    posts_formatados = []
+    for post in posts:
+
+        if post.updated_at != post.created_at:
+            data_atualizacao = post.updated_at.strftime("%d/%m/%Y")
+        else:
+            data_atualizacao = None
+        
+        posts_formatados.append({"id":post.id, "autor":autores.get(post.autor_id, "Desconhecido"), "data_criacao":post.created_at.strftime("%d/%m/%Y"), "data_atualizacao":data_atualizacao, "can_edit":pode_editar_post(post=post, user=current_user), "imagem_id":post.imagem_id, "titulo":post.titulo, "subtitulo":post.subtitulo, "texto":post.texto, "link_acao":post.link_acao})
+
+    return render_template(
+        "blog/feed.html",
+        posts=posts_formatados,
+        can_create=pode_criar_post(current_user)
+    )
+
+@app.route("/blog/novo", methods=["GET", "POST"])
+@login_required
+def criar_post():
+    if not pode_criar_post(current_user):
+        abort(403)
+
+    form = BlogPostForm()
+
+    if form.validate_on_submit():
+        try:
+            imagem_id = None
+
+            # 🔹 salva imagem primeiro
+            if form.imagem.data:
+                file = form.imagem.data
+
+                imagem = Imagem(
+                    img=file.read(),
+                    name=secure_filename(file.filename),
+                    mimetype=file.mimetype
+                )
+                db.session.add(imagem)
+                db.session.flush()
+
+                imagem_id = imagem.id
+
+            post = BlogPost(
+                autor_id=current_user.id,
+                titulo=form.titulo.data,
+                subtitulo=form.subtitulo.data,
+                texto=form.texto.data,
+                link_acao=form.link_acao.data,
+                imagem_id=imagem_id
+            )
+
+            db.session.add(post)
+            db.session.commit()
+
+            flash("Post criado com sucesso!", "success")
+            return redirect(url_for("blog_feed"))
+
+        except Exception as e:
+            db.session.rollback()
+            flash("Erro ao criar post.", "danger")
+
+    return render_template("blog/form.html", form=form, titulo_pagina="Novo post")
+
+@app.route("/blog/<int:post_id>/editar", methods=["GET", "POST"])
+@login_required
+def editar_post(post_id):
+    post = BlogPost.query.get_or_404(post_id)
+
+    # permissão
+    if not pode_editar_post(post=post, user=current_user):
+        abort(403)
+
+    form = BlogPostForm(obj=post)
+
+    if form.validate_on_submit():
+        try:
+            post.titulo = form.titulo.data
+            post.subtitulo = form.subtitulo.data
+            post.texto = form.texto.data
+            post.link_acao = form.link_acao.data
+
+            # 🔹 nova imagem enviada
+            if form.imagem.data:
+                file = form.imagem.data
+
+                if post.imagem_id:
+                    # edita imagem existente
+                    imagem = Imagem.query.get_or_404(post.imagem_id)
+                    imagem.img = file.read()
+                    imagem.name = secure_filename(file.filename)
+                    imagem.mimetype = file.mimetype
+                else:
+                    # cria imagem
+                    imagem = Imagem(
+                        img=file.read(),
+                        name=secure_filename(file.filename),
+                        mimetype=file.mimetype
+                    )
+                    db.session.add(imagem)
+                    db.session.flush()
+                    post.imagem_id = imagem.id
+
+            db.session.commit()
+            flash("Post atualizado com sucesso!", "success")
+            return redirect(url_for("blog_feed"))
+
+        except Exception:
+            db.session.rollback()
+            flash("Erro ao atualizar post.", "danger")
+
+    return render_template(
+        "blog/form.html",
+        form=form,
+        titulo_pagina="Editar post",
+        post=post,
+    )
+
+@app.route("/blog/<int:post_id>/excluir", methods=["POST"])
+@login_required
+def excluir_post(post_id):
+    post = BlogPost.query.get_or_404(post_id)
+
+    if not pode_editar_post(post=post,user=current_user):
+        abort(403)
+
+    try:
+        db.session.delete(post)
+        db.session.commit()
+        flash("Post excluído com sucesso.", "success")
+    except Exception:
+        db.session.rollback()
+        flash("Erro ao excluir post.", "danger")
+
+    return redirect(url_for("blog_feed"))
 
 # Cria o banco de dados e as tabelas, se ainda não existirem, dentro do contexto da aplicação
 # with app.app_context():

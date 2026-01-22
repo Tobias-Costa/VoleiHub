@@ -73,7 +73,7 @@ class ProjetoAdmin(AdminModelView):
             coerce=int,
             allow_blank=True,
             blank_text="Sem logo",
-            choices=lambda: [(i.id, i.name or f"Imagem {i.id}") for i in Image.query.all()]
+            choices=lambda: [(i.id, i.name or f"Imagem {i.id}") for i in Imagem.query.all()]
         ),
     }
 
@@ -211,7 +211,7 @@ class EquipeAdmin(AdminModelView):
             coerce=int,
             allow_blank=True,
             blank_text="Sem logo",
-            choices=lambda: [(i.id, i.name or f"Imagem {i.id}") for i in Image.query.all()]
+            choices=lambda: [(i.id, i.name or f"Imagem {i.id}") for i in Imagem.query.all()]
         ),
     }
 
@@ -428,11 +428,69 @@ class AtletaEnderecoAdmin(AdminModelView):
         ),
     }
 
-class ImageAdmin(AdminModelView):
+class ImagemAdmin(AdminModelView):
     column_list = ["id", "name", "mimetype"]
     column_searchable_list = ["name", "mimetype"]
 
     form_excluded_columns = ["img"]  # NÃO editar binário no admin
+
+class BlogPostAdmin(AdminModelView):
+
+    column_list = [
+        "id",
+        "titulo",
+        "autor_id",
+        "imagem_id",
+        "created_at",
+        "updated_at",
+    ]
+
+    column_labels = {
+        "autor_id": "Autor",
+        "imagem_id": "Imagem",
+        "created_at": "Criado em",
+        "updated_at": "Atualizado em",
+    }
+
+    column_formatters = {
+        "autor_id": lambda v, c, m, p:
+            Usuario.query.get(m.autor_id).firstname_usuario
+            if m.autor_id else "-",
+
+        "imagem_id": lambda v, c, m, p:
+            Imagem.query.get(m.imagem_id).name
+            if m.imagem_id else "-"
+    }
+
+    form_columns = [
+        "autor_id",
+        "titulo",
+        "subtitulo",
+        "texto",
+        "imagem_id",
+        "link_acao",
+    ]
+
+    form_extra_fields = {
+        "autor_id": Select2Field(
+            "Autor",
+            coerce=int,
+            choices=lambda: [
+                (u.id, f"{u.firstname_usuario} {u.lastname_usuario}")
+                for u in Usuario.query.all()
+            ]
+        ),
+        "imagem_id": Select2Field(
+            "Imagem",
+            coerce=int,
+            allow_blank=True,
+            blank_text="Sem imagem",
+            choices=lambda: [
+                (i.id, i.name or f"Imagem {i.id}")
+                for i in Imagem.query.all()
+            ]
+        ),
+    }
 
 
 def init_admin(app):
@@ -445,7 +503,8 @@ def init_admin(app):
     admin.add_view(AtletaEnderecoAdmin(AtletaEndereco, db.session))
     admin.add_view(AtletaHistoricoAdmin(AtletaHistorico, db.session))
     admin.add_view(TransferenciaAdmin(Transferencia, db.session))
-    admin.add_view(ImageAdmin(Image, db.session))
+    admin.add_view(ImagemAdmin(Imagem, db.session))
+    admin.add_view(BlogPostAdmin(BlogPost, db.session))
     admin.add_view(AdminModelView(Estado, db.session))
     admin.add_view(CidadeAdmin(Cidade, db.session))
     admin.add_view(AdminModelView(Modalidade, db.session))
