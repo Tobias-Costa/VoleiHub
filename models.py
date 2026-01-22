@@ -237,14 +237,14 @@ class Imagem(db.Model):
     mimetype = db.Column(db.Text, nullable=False)
     
     def __repr__(self):
-        return f'<Image {self.name}>'
+        return f'<Imagem {self.name}>'
     
 class BlogPost(db.Model):
     __tablename__ = "blog_posts"
 
     id = db.Column(db.Integer, primary_key=True)
-    autor_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
-    imagem_id = db.Column(db.Integer, db.ForeignKey("imagens.id"), nullable=True)
+    autor_id = db.Column(db.Integer, db.ForeignKey("usuarios.id", ondelete="RESTRICT"), nullable=False)
+    imagem_id = db.Column(db.Integer, db.ForeignKey("imagens.id", ondelete="RESTRICT"), nullable=True)
     titulo = db.Column(db.String(150), nullable=False)
     subtitulo = db.Column(db.String(255), nullable=True)
     texto = db.Column(db.Text, nullable=False)

@@ -1,8 +1,8 @@
-"""implementação de on_delete='cascade'
+"""estrutura inicial
 
-Revision ID: aab56dd36681
+Revision ID: 47e9405c8159
 Revises: 
-Create Date: 2026-01-11 16:58:49.365479
+Create Date: 2026-01-22 17:43:27.528340
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'aab56dd36681'
+revision = '47e9405c8159'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -31,6 +31,14 @@ def upgrade():
     sa.PrimaryKeyConstraint('id', name=op.f('pk_estados')),
     sa.UniqueConstraint('abreviacao', name=op.f('uq_estados_abreviacao')),
     sa.UniqueConstraint('nome_estado', name=op.f('uq_estados_nome_estado'))
+    )
+    op.create_table('imagens',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('img', sa.Text(), nullable=False),
+    sa.Column('name', sa.Text(), nullable=False),
+    sa.Column('mimetype', sa.Text(), nullable=False),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_imagens')),
+    sa.UniqueConstraint('img', name=op.f('uq_imagens_img'))
     )
     op.create_table('modalidades',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -78,16 +86,31 @@ def upgrade():
     sa.PrimaryKeyConstraint('id', name=op.f('pk_usuarios')),
     sa.UniqueConstraint('email', name=op.f('uq_usuarios_email'))
     )
+    op.create_table('blog_posts',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('autor_id', sa.Integer(), nullable=False),
+    sa.Column('imagem_id', sa.Integer(), nullable=True),
+    sa.Column('titulo', sa.String(length=150), nullable=False),
+    sa.Column('subtitulo', sa.String(length=255), nullable=True),
+    sa.Column('texto', sa.Text(), nullable=False),
+    sa.Column('link_acao', sa.String(length=255), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['autor_id'], ['usuarios.id'], name=op.f('fk_blog_posts_autor_id_usuarios'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['imagem_id'], ['imagens.id'], name=op.f('fk_blog_posts_imagem_id_imagens'), ondelete='RESTRICT'),
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_blog_posts'))
+    )
     op.create_table('cidades',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('nome_cidade', sa.String(length=40), nullable=False),
     sa.Column('estado_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['estado_id'], ['estados.id'], name=op.f('fk_cidades_estado_id_estados'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['estado_id'], ['estados.id'], name=op.f('fk_cidades_estado_id_estados'), ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_cidades')),
     sa.UniqueConstraint('nome_cidade', name=op.f('uq_cidades_nome_cidade'))
     )
     op.create_table('projetos',
     sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('logo_id', sa.Integer(), nullable=True),
     sa.Column('nome_projeto', sa.String(length=80), nullable=False),
     sa.Column('descricao', sa.Text(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=False),
@@ -95,21 +118,24 @@ def upgrade():
     sa.Column('responsavel_id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('last_edited', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['cidade_id'], ['cidades.id'], name=op.f('fk_projetos_cidade_id_cidades'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['responsavel_id'], ['usuarios.id'], name=op.f('fk_projetos_responsavel_id_usuarios'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['cidade_id'], ['cidades.id'], name=op.f('fk_projetos_cidade_id_cidades'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['logo_id'], ['imagens.id'], name=op.f('fk_projetos_logo_id_imagens'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['responsavel_id'], ['usuarios.id'], name=op.f('fk_projetos_responsavel_id_usuarios'), ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_projetos')),
     sa.UniqueConstraint('nome_projeto', name=op.f('uq_projetos_nome_projeto'))
     )
     op.create_table('equipes',
     sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('logo_id', sa.Integer(), nullable=True),
     sa.Column('nome_equipe', sa.String(length=80), nullable=False),
     sa.Column('projeto_id', sa.Integer(), nullable=False),
     sa.Column('tecnico_id', sa.Integer(), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('last_edited', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['projeto_id'], ['projetos.id'], name=op.f('fk_equipes_projeto_id_projetos'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['tecnico_id'], ['usuarios.id'], name=op.f('fk_equipes_tecnico_id_usuarios'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['logo_id'], ['imagens.id'], name=op.f('fk_equipes_logo_id_imagens'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['projeto_id'], ['projetos.id'], name=op.f('fk_equipes_projeto_id_projetos'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['tecnico_id'], ['usuarios.id'], name=op.f('fk_equipes_tecnico_id_usuarios'), ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_equipes')),
     sa.UniqueConstraint('nome_equipe', name=op.f('uq_equipes_nome_equipe'))
     )
@@ -121,6 +147,8 @@ def upgrade():
     sa.Column('email', sa.String(length=120), nullable=False),
     sa.Column('rg', sa.String(length=20), nullable=False),
     sa.Column('cpf', sa.String(length=11), nullable=False),
+    sa.Column('registro_cuca', sa.String(length=40), nullable=True),
+    sa.Column('registro_cbv', sa.String(length=40), nullable=True),
     sa.Column('data_nascimento', sa.Date(), nullable=False),
     sa.Column('telefone1', sa.String(length=20), nullable=False),
     sa.Column('telefone2', sa.String(length=20), nullable=True),
@@ -133,7 +161,7 @@ def upgrade():
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('last_edited', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['categoria_id'], ['categorias.id'], name=op.f('fk_atletas_categoria_id_categorias'), ondelete='RESTRICT'),
-    sa.ForeignKeyConstraint(['equipe_id'], ['equipes.id'], name=op.f('fk_atletas_equipe_id_equipes'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['equipe_id'], ['equipes.id'], name=op.f('fk_atletas_equipe_id_equipes'), ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['modalidade_id'], ['modalidades.id'], name=op.f('fk_atletas_modalidade_id_modalidades'), ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['nivel_id'], ['niveis.id'], name=op.f('fk_atletas_nivel_id_niveis'), ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['posicao_id'], ['posicoes.id'], name=op.f('fk_atletas_posicao_id_posicoes'), ondelete='RESTRICT'),
@@ -156,7 +184,7 @@ def upgrade():
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('last_edited', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['atleta_id'], ['atletas.id'], name=op.f('fk_enderecos_atleta_id_atletas'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['cidade_id'], ['cidades.id'], name=op.f('fk_enderecos_cidade_id_cidades'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['cidade_id'], ['cidades.id'], name=op.f('fk_enderecos_cidade_id_cidades'), ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_enderecos'))
     )
     op.create_table('historicos',
@@ -168,11 +196,11 @@ def upgrade():
     sa.Column('motivo', sa.String(length=255), nullable=True),
     sa.Column('responsavel_id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['atleta_id'], ['atletas.id'], name=op.f('fk_historicos_atleta_id_atletas'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['equipe_id'], ['equipes.id'], name=op.f('fk_historicos_equipe_id_equipes'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['projeto_id'], ['projetos.id'], name=op.f('fk_historicos_projeto_id_projetos'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['responsavel_id'], ['usuarios.id'], name=op.f('fk_historicos_responsavel_id_usuarios'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['status_id'], ['status.id'], name=op.f('fk_historicos_status_id_status'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['atleta_id'], ['atletas.id'], name=op.f('fk_historicos_atleta_id_atletas'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['equipe_id'], ['equipes.id'], name=op.f('fk_historicos_equipe_id_equipes'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['projeto_id'], ['projetos.id'], name=op.f('fk_historicos_projeto_id_projetos'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['responsavel_id'], ['usuarios.id'], name=op.f('fk_historicos_responsavel_id_usuarios'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['status_id'], ['status.id'], name=op.f('fk_historicos_status_id_status'), ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_historicos'))
     )
     op.create_table('transferencias',
@@ -185,12 +213,12 @@ def upgrade():
     sa.Column('motivo', sa.String(length=255), nullable=True),
     sa.Column('responsavel_id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['atleta_id'], ['atletas.id'], name=op.f('fk_transferencias_atleta_id_atletas'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['equipe_destino_id'], ['equipes.id'], name=op.f('fk_transferencias_equipe_destino_id_equipes'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['equipe_origem_id'], ['equipes.id'], name=op.f('fk_transferencias_equipe_origem_id_equipes'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['projeto_destino_id'], ['projetos.id'], name=op.f('fk_transferencias_projeto_destino_id_projetos'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['projeto_origem_id'], ['projetos.id'], name=op.f('fk_transferencias_projeto_origem_id_projetos'), ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['responsavel_id'], ['usuarios.id'], name=op.f('fk_transferencias_responsavel_id_usuarios'), ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['atleta_id'], ['atletas.id'], name=op.f('fk_transferencias_atleta_id_atletas'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['equipe_destino_id'], ['equipes.id'], name=op.f('fk_transferencias_equipe_destino_id_equipes'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['equipe_origem_id'], ['equipes.id'], name=op.f('fk_transferencias_equipe_origem_id_equipes'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['projeto_destino_id'], ['projetos.id'], name=op.f('fk_transferencias_projeto_destino_id_projetos'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['projeto_origem_id'], ['projetos.id'], name=op.f('fk_transferencias_projeto_origem_id_projetos'), ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['responsavel_id'], ['usuarios.id'], name=op.f('fk_transferencias_responsavel_id_usuarios'), ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id', name=op.f('pk_transferencias'))
     )
     # ### end Alembic commands ###
@@ -205,12 +233,14 @@ def downgrade():
     op.drop_table('equipes')
     op.drop_table('projetos')
     op.drop_table('cidades')
+    op.drop_table('blog_posts')
     op.drop_table('usuarios')
     op.drop_table('status')
     op.drop_table('sexos')
     op.drop_table('posicoes')
     op.drop_table('niveis')
     op.drop_table('modalidades')
+    op.drop_table('imagens')
     op.drop_table('estados')
     op.drop_table('categorias')
     # ### end Alembic commands ###
