@@ -17,8 +17,6 @@ depends_on = None
 
 
 def upgrade():
-    conn = op.get_bind()
-    conn.execute(sa.text("PRAGMA foreign_keys=OFF"))
 
     with op.batch_alter_table('projetos') as batch_op:
         batch_op.add_column(
@@ -44,12 +42,7 @@ def upgrade():
             ondelete='RESTRICT'
         )
 
-    conn.execute(sa.text("PRAGMA foreign_keys=ON"))
-
-
 def downgrade():
-    conn = op.get_bind()
-    conn.execute(sa.text("PRAGMA foreign_keys=OFF"))
 
     with op.batch_alter_table('equipes') as batch_op:
         batch_op.drop_constraint('fk_equipes_logo', type_='foreignkey')
@@ -58,5 +51,3 @@ def downgrade():
     with op.batch_alter_table('projetos') as batch_op:
         batch_op.drop_constraint('fk_projetos_logo', type_='foreignkey')
         batch_op.drop_column('logo_id')
-
-    conn.execute(sa.text("PRAGMA foreign_keys=ON"))
