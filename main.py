@@ -4,7 +4,6 @@ from wtforms import StringField, TextAreaField, SelectField, BooleanField, DateF
 from wtforms.validators import DataRequired, Length, Email, EqualTo, Optional
 from flask import Flask, Response, request, redirect, url_for, render_template, flash, abort
 from sqlalchemy import or_
-from sqlalchemy.exc import OperationalError
 from flask_migrate import Migrate
 from admin import init_admin 
 from datetime import datetime
@@ -1851,12 +1850,8 @@ def excluir_post(post_id):
     return redirect(url_for("blog_feed"))
 
 # Cria o banco de dados e as tabelas, se ainda não existirem, dentro do contexto da aplicação
-with app.app_context():
-    try:
-        create_initial_admin()
-    except OperationalError:
-        # Isso acontece se as tabelas ainda não existirem
-        pass
+# with app.app_context():
+#     create_initial_admin()
 
 # if __name__ == '__main__':
 #     with app.app_context():
