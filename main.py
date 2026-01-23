@@ -269,14 +269,14 @@ class AtletaForm(FlaskForm):
     )
     lastname_atleta = StringField(
         "Sobrenome",
-        validators=[DataRequired(message="O sobrenome é obrigatório.")]
+        validators=[Optional()]
     )
 
     equipe_id = SelectField("Equipe", coerce=int, validators=[DataRequired(message="Selecione uma equipe.")])
 
     email = StringField(
         "Email",
-        validators=[DataRequired(message="O e-mail é obrigatório."), Email(message="Email inválido.")]
+        validators=[Optional(), Email(message="Email inválido.")]
     )
 
     data_nascimento = DateField(
@@ -314,17 +314,11 @@ class EnderecoAtletaForm(FlaskForm):
         validators=[DataRequired(message="O logradouro é obrigatório.")]
     )
 
-    numero = StringField(
-        "Número",
-        validators=[DataRequired(message="O número é obrigatório.")]
-    )
+    numero = StringField("Número")
 
     complemento = StringField("Complemento")
 
-    bairro = StringField(
-        "Bairro",
-        validators=[DataRequired(message="O bairro é obrigatório.")]
-    )
+    bairro = StringField("Bairro")
 
     cidade_id = SelectField(
         "Cidade",
@@ -332,10 +326,7 @@ class EnderecoAtletaForm(FlaskForm):
         validators=[DataRequired(message="Selecione uma cidade.")]
     )
 
-    cep = StringField(
-        "CEP",
-        validators=[DataRequired(message="O CEP é obrigatório.")]
-    )
+    cep = StringField("CEP")
 
 class BlogPostForm(FlaskForm):
     titulo = StringField(
@@ -1629,7 +1620,7 @@ def visualizar_atleta():
     projetos_query = db.session.query(Projeto)
 
     atleta = Atleta.query.get_or_404(atleta_id)
-    nome_atleta = f"{atleta.firstname_atleta} {atleta.lastname_atleta}"
+    nome_atleta = (f"{atleta.firstname_atleta} {atleta.lastname_atleta}" if atleta.lastname_atleta else atleta.firstname_atleta)
     equipe_atleta = equipes_query.filter(Equipe.id==atleta.equipe_id).scalar()
     projeto_atleta = projetos_query.filter(Projeto.id==equipe_atleta.projeto_id).scalar()
     status_atleta = status_query.filter(Status.id==atleta.status_id).scalar()
@@ -1850,11 +1841,11 @@ def excluir_post(post_id):
     return redirect(url_for("blog_feed"))
 
 # Cria o banco de dados e as tabelas, se ainda não existirem, dentro do contexto da aplicação
-with app.app_context():
-    create_initial_admin()
+# with app.app_context():
+#     create_initial_admin()
 
-# if __name__ == '__main__':
-#     with app.app_context():
-#         db.create_all() # Excluir após sistema estável
-#         create_initial_admin()
-#     app.run(debug=True)
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all() # Excluir após sistema estável
+        create_initial_admin()
+    app.run(debug=True)

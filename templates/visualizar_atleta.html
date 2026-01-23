@@ -65,7 +65,7 @@
         <div class="row g-3">
 
             <div class="col-12 col-md-6">
-                <strong>Email:</strong> {{ dados_pessoais_atleta.email }}
+                <strong>Email:</strong> {{ dados_pessoais_atleta.email or "---" }}
             </div>
 
             <div class="col-12 col-md-6">
@@ -110,7 +110,7 @@
 
             <div class="col-12 col-md-4">
                 <strong>Logradouro:</strong>
-                {{ endereco.logradouro }}, {{ endereco.numero }}
+                {{ endereco.logradouro }}, {{ endereco.numero  or 'S/N' }}
             </div>
 
             
@@ -120,7 +120,7 @@
             </div>
 
             <div class="col-12 col-md-4">
-                <strong>Bairro:</strong> {{ endereco.bairro }}
+                <strong>Bairro:</strong> {{ endereco.bairro or '---' }}
             </div>
 
             <div class="col-12 col-md-4">
@@ -128,7 +128,7 @@
             </div>
 
             <div class="col-12 col-md-4">
-                <strong>CEP:</strong> {{ endereco.cep }}
+                <strong>CEP:</strong> {{ endereco.cep or '---' }}
             </div>
 
 

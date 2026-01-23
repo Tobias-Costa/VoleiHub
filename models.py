@@ -156,18 +156,17 @@ class Atleta(db.Model):
     __tablename__ = 'atletas' 
 
     id = db.Column(db.Integer, primary_key=True)
-    # profile_picture_url = Column(String(255), nullable=True) 
     equipe_id = db.Column(db.Integer, db.ForeignKey('equipes.id', ondelete="RESTRICT"), nullable=False)
     firstname_atleta = db.Column(db.String(80), nullable=False)
-    lastname_atleta = db.Column(db.String(80), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    lastname_atleta = db.Column(db.String(80), nullable=True) # NO
+    email = db.Column(db.String(120), nullable=True) #NO
     rg = db.Column(db.String(20), unique=True, nullable=False)
     cpf = db.Column(db.String(11), unique=True, nullable=False)
-    registro_cuca = db.Column(db.String(40), nullable=True)
-    registro_cbv = db.Column(db.String(40), nullable=True)
+    registro_cuca = db.Column(db.String(40), nullable=True) #NO
+    registro_cbv = db.Column(db.String(40), nullable=True) #NO
     data_nascimento =  db.Column(db.Date, nullable=False)
     telefone1 = db.Column(db.String(20), nullable=False)
-    telefone2 = db.Column(db.String(20), nullable=True)
+    telefone2 = db.Column(db.String(20), nullable=True) #NO
     sexo_id = db.Column(db.Integer, db.ForeignKey('sexos.id', ondelete="RESTRICT"), nullable=False)
     modalidade_id = db.Column(db.Integer, db.ForeignKey('modalidades.id', ondelete="RESTRICT"), nullable=False)
     posicao_id = db.Column(db.Integer, db.ForeignKey('posicoes.id', ondelete="RESTRICT"), nullable=False)
@@ -186,11 +185,11 @@ class AtletaEndereco(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     atleta_id = db.Column(db.Integer, db.ForeignKey('atletas.id', ondelete="CASCADE"), nullable=False)
     logradouro = db.Column(db.String(255), nullable=False)
-    numero = db.Column(db.String(20), nullable=False) # Armazenar como string para incluir 's/n', 'apto 101'
-    complemento = db.Column(db.String(100), nullable=True)
-    bairro = db.Column(db.String(100), nullable=False)
+    numero = db.Column(db.String(20), nullable=True) #NO
+    complemento = db.Column(db.String(100), nullable=True) #NO
+    bairro = db.Column(db.String(100), nullable=True) #NO
     cidade_id = db.Column(db.Integer, db.ForeignKey('cidades.id', ondelete="RESTRICT"), nullable=False)
-    cep = db.Column(db.String(8), nullable=False)
+    cep = db.Column(db.String(8), nullable=True) #NO
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.now) 
     last_edited = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now) 
 
