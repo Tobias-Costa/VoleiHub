@@ -1850,8 +1850,8 @@ def excluir_post(post_id):
     return redirect(url_for("blog_feed"))
 
 # Cria o banco de dados e as tabelas, se ainda não existirem, dentro do contexto da aplicação
-# with app.app_context():
-#     create_initial_admin()
+with app.app_context():
+    create_initial_admin()
 
 # if __name__ == '__main__':
 #     with app.app_context():
