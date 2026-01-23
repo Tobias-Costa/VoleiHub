@@ -1851,7 +1851,6 @@ def excluir_post(post_id):
 
 # Cria o banco de dados e as tabelas, se ainda não existirem, dentro do contexto da aplicação
 with app.app_context():
-    db.create_all() # Excluir após sistema estável
     create_initial_admin()
 
 # if __name__ == '__main__':
