@@ -31,13 +31,14 @@
         <div class="d-flex justify-content-between flex-wrap">
             <div>
     
+                <span class="badge bg-info">
+                    {{ atleta.status }}
+                </span>
+                
                 <h3 class="fw-bold mb-1">{{ atleta.nome_atleta }}</h3>
                 <p class="mb-1"><strong>Projeto:</strong> {{ atleta.projeto }}</p>
                 <p class="mb-1"><strong>Equipe:</strong> {{ atleta.equipe }}</p>
 
-                <span class="badge bg-info">
-                    {{ atleta.status }}
-                </span>
             </div>
 
             <div>
