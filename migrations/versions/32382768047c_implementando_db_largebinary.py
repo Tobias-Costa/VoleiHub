@@ -1,8 +1,8 @@
-"""estrutura inicial
+"""implementando db.LargeBinary
 
-Revision ID: 47e9405c8159
+Revision ID: 32382768047c
 Revises: 
-Create Date: 2026-01-22 17:43:27.528340
+Create Date: 2026-01-23 00:02:26.039641
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '47e9405c8159'
+revision = '32382768047c'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -34,11 +34,10 @@ def upgrade():
     )
     op.create_table('imagens',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('img', sa.Text(), nullable=False),
+    sa.Column('img', sa.LargeBinary(), nullable=False),
     sa.Column('name', sa.Text(), nullable=False),
     sa.Column('mimetype', sa.Text(), nullable=False),
-    sa.PrimaryKeyConstraint('id', name=op.f('pk_imagens')),
-    sa.UniqueConstraint('img', name=op.f('uq_imagens_img'))
+    sa.PrimaryKeyConstraint('id', name=op.f('pk_imagens'))
     )
     op.create_table('modalidades',
     sa.Column('id', sa.Integer(), nullable=False),
