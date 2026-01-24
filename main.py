@@ -84,34 +84,6 @@ db.init_app(app)
 migrate = Migrate(app, db, render_as_batch=True)
 init_admin(app) 
 
-def create_initial_admin():
-    admin_email = os.getenv("ADMIN_EMAIL")
-    admin_password = os.getenv("ADMIN_PASSWORD")
-
-    if not admin_email or not admin_password:
-        return
-    
-    # Se já existe algum usuário, não cria outro
-    if Usuario.query.first():
-        return
-
-    admin = Usuario(
-        firstname_usuario="ADMIN",
-        lastname_usuario="USER",
-        email=admin_email,
-        password=generate_password_hash(admin_password, method="pbkdf2:sha256", salt_length=8),
-        telefone1="00000000000",
-        telefone2=None,
-        is_admin=True,
-        is_coord=False,
-        is_tecnico=False,
-        created_at=datetime.now(),
-        last_edited=datetime.now()
-    )
-
-    db.session.add(admin)
-    db.session.commit()
-
 @app.errorhandler(RequestEntityTooLarge)
 def handle_file_too_large(e):
     flash("O arquivo enviado é muito grande. O limite é de 10 MB.", "danger")
@@ -1840,12 +1812,41 @@ def excluir_post(post_id):
 
     return redirect(url_for("blog_feed"))
 
-# Cria o banco de dados e as tabelas, se ainda não existirem, dentro do contexto da aplicação
-# with app.app_context():
-#     create_initial_admin()
+# ================================
+# USADO APENAS UMA VEZ
+# NÃO DESCOMENTAR EM PRODUÇÃO
+# ================================
 
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all() # Excluir após sistema estável
-        create_initial_admin()
-    app.run(debug=True)
+# def create_initial_admin():
+#     admin_email = os.getenv("ADMIN_EMAIL")
+#     admin_password = os.getenv("ADMIN_PASSWORD")
+
+#     if not admin_email or not admin_password:
+#         return
+    
+#     # Se já existe algum usuário, não cria outro
+#     if Usuario.query.first():
+#         return
+
+#     admin = Usuario(
+#         firstname_usuario="ADMIN",
+#         lastname_usuario="USER",
+#         email=admin_email,
+#         password=generate_password_hash(admin_password, method="pbkdf2:sha256", salt_length=8),
+#         telefone1="00000000000",
+#         telefone2=None,
+#         is_admin=True,
+#         is_coord=False,
+#         is_tecnico=False,
+#         created_at=datetime.now(),
+#         last_edited=datetime.now()
+#     )
+
+#     db.session.add(admin)
+#     db.session.commit()
+
+# if __name__ == '__main__':
+#     with app.app_context():
+#         db.create_all() # Excluir após sistema estável
+#         create_initial_admin()
+#     app.run(debug=True)
