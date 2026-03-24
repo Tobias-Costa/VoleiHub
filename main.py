@@ -1817,36 +1817,36 @@ def excluir_post(post_id):
 # NÃO DESCOMENTAR EM PRODUÇÃO
 # ================================
 
-# def create_initial_admin():
-#     admin_email = os.getenv("ADMIN_EMAIL")
-#     admin_password = os.getenv("ADMIN_PASSWORD")
+def create_initial_admin():
+    admin_email = os.getenv("ADMIN_EMAIL")
+    admin_password = os.getenv("ADMIN_PASSWORD")
 
-#     if not admin_email or not admin_password:
-#         return
+    if not admin_email or not admin_password:
+        return
     
-#     # Se já existe algum usuário, não cria outro
-#     if Usuario.query.first():
-#         return
+    # Se já existe algum usuário, não cria outro
+    if Usuario.query.first():
+        return
 
-#     admin = Usuario(
-#         firstname_usuario="ADMIN",
-#         lastname_usuario="USER",
-#         email=admin_email,
-#         password=generate_password_hash(admin_password, method="pbkdf2:sha256", salt_length=8),
-#         telefone1="00000000000",
-#         telefone2=None,
-#         is_admin=True,
-#         is_coord=False,
-#         is_tecnico=False,
-#         created_at=datetime.now(),
-#         last_edited=datetime.now()
-#     )
+    admin = Usuario(
+        firstname_usuario="ADMIN",
+        lastname_usuario="USER",
+        email=admin_email,
+        password=generate_password_hash(admin_password, method="pbkdf2:sha256", salt_length=8),
+        telefone1="00000000000",
+        telefone2=None,
+        is_admin=True,
+        is_coord=False,
+        is_tecnico=False,
+        created_at=datetime.now(),
+        last_edited=datetime.now()
+    )
 
-#     db.session.add(admin)
-#     db.session.commit()
+    db.session.add(admin)
+    db.session.commit()
 
-# if __name__ == '__main__':
-#     with app.app_context():
-#         db.create_all() # Excluir após sistema estável
-#         create_initial_admin()
-#     app.run(debug=True)
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all() # Excluir após sistema estável
+        create_initial_admin()
+    app.run(debug=True)
